@@ -62,7 +62,6 @@ class VerificarOrdenes extends Command
             $registro->save();
         }
 
-
         $arrayOrdenHoy = Ordenes::where('estado_iniciada', 0)
             ->where('estado_cancelada', 0)
             ->whereDate('fecha_orden', '=', Carbon::today('America/El_Salvador')->toDateString())
@@ -70,15 +69,22 @@ class VerificarOrdenes extends Command
 
         $pilaTokenRestaurante = array();
 
-        foreach ($arrayOrdenHoy as $info){
-            // obtener token del servicio que esta asociado esta orden
+        foreach ($arrayOrdenHoy as $orden) {
+            // Saltar si ya alcanzó el límite de notificaciones
+            if ($orden->conteo_notificaciones >= 20) {
+                Log::info('Orden #' . $orden->id . ' superó el límite de notificaciones. Conteo actual: ' . $orden->conteo_notificacion);
+                continue;
+            }
 
-            // EL PRIMER USUARIO QUE NO ESTE BLOQUEADO
-            if($infoUsuario = UsuariosServicios::where('id_servicios', $info->id_servicio)
+            // Obtener token del servicio asociado (primer usuario no bloqueado)
+            if ($infoUsuario = UsuariosServicios::where('id_servicios', $orden->id_servicio)
                 ->where('bloqueado', 0)
-                ->first()){
+                ->first()) {
                 array_push($pilaTokenRestaurante, $infoUsuario->token_fcm);
             }
+
+            // Incrementar el conteo de notificaciones para esta orden
+            $orden->increment('conteo_notificaciones');
         }
 
         if($pilaTokenRestaurante != null) {

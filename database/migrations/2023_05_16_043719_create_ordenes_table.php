@@ -85,7 +85,7 @@ class CreateOrdenesTable extends Migration
             $table->boolean('cancelado_por');
 
 
-
+            $table->integer('conteo_notificacion')->default(0);
 
 
 

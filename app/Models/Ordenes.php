@@ -10,4 +10,33 @@ class Ordenes extends Model
     use HasFactory;
     protected $table = 'ordenes';
     public $timestamps = false;
+
+    protected $fillable = [
+        'id_cliente',
+        'id_servicio',
+        'id_zona',
+        'nota_orden',
+        'total_orden',
+        'fecha_orden',
+        'fecha_estimada',
+        'estado_iniciada',
+        'fecha_iniciada',
+        'estado_preparada',
+        'fecha_preparada',
+        'estado_camino',
+        'fecha_camino',
+        'estado_entregada',
+        'fecha_entregada',
+        'estado_cancelada',
+        'fecha_cancelada',
+        'nota_cancelada',
+        'id_cupones',
+        'total_cupon',
+        'mensaje_cupon',
+        'visible',
+        'id_cupones_copia',
+        'cancelado_por',
+        'conteo_notificacion',
+    ];
+
 }

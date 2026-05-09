@@ -443,6 +443,7 @@ class ApiProcesarController extends Controller
                     $orden->mensaje_cupon = $mensajeCupon;
                     $orden->visible = 1;
                     $orden->cancelado_por = 0;
+                    $orden->conteo_notificacion = 0;
 
                     $orden->save();
 
