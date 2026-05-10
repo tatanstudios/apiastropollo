@@ -71,7 +71,7 @@ class VerificarOrdenes extends Command
 
         foreach ($arrayOrdenHoy as $orden) {
             // Saltar si ya alcanzó el límite de notificaciones
-            if ($orden->conteo_notificaciones >= 20) {
+            if ($orden->conteo_notificacion >= 20) {
                 Log::info('Orden #' . $orden->id . ' superó el límite de notificaciones. Conteo actual: ' . $orden->conteo_notificacion);
                 continue;
             }
@@ -84,7 +84,8 @@ class VerificarOrdenes extends Command
             }
 
             // Incrementar el conteo de notificaciones para esta orden
-            $orden->increment('conteo_notificaciones');
+            $orden->conteo_notificacion = $orden->conteo_notificacion + 1;
+            $orden->save();
         }
 
         if($pilaTokenRestaurante != null) {
