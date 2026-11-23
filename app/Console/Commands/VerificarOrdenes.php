@@ -3,9 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\EnviarNotificacionRestaurante;
-use App\Models\Informacion;
 use App\Models\Ordenes;
-use App\Models\Registros;
 use App\Models\UsuariosServicios;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -34,13 +32,6 @@ class VerificarOrdenes extends Command
     public function handle(): int
     {
         $ahora = Carbon::now(self::ZONA);
-
-        // registro de que el cron esta corriendo (se activa desde el panel)
-        if (Informacion::where('id', 1)->value('crono_activo') == 1) {
-            $registro = new Registros();
-            $registro->fecha = $ahora;
-            $registro->save();
-        }
 
         // pendientes con al menos 1 minuto de creadas y que aun no llegan al limite.
         // La ventana de 1 hora evita avisar de ordenes viejas olvidadas (ej. al desplegar).
