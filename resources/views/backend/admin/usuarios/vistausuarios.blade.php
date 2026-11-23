@@ -78,8 +78,8 @@
 
                     <div class="form-group">
                         <label for="usuario">Usuario</label>
-                        <input type="text" maxlength="20" class="form-control" id="usuario" autocomplete="off" placeholder="Ej.: Sucursal Metapan">
-                        <small class="text-muted">Con esto entra a la app del restaurante.</small>
+                        <input type="text" maxlength="20" class="form-control" id="usuario" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ej.: SucursalMetapan">
+                        <small class="text-muted">Con esto entra a la app del restaurante. Sin espacios.</small>
                     </div>
 
                     <div class="form-group mb-0">
@@ -118,6 +118,14 @@
     <script>
         $(function () {
             recargar();
+
+            // el usuario no lleva espacios: ni al escribir ni al pegar
+            $('#usuario')
+                .on('keydown', function (e) { if (e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); } })
+                .on('input', function () {
+                    var limpio = this.value.replace(/\s+/g, '');
+                    if (limpio !== this.value) { this.value = limpio; }
+                });
 
             // viene de Restaurantes > "Sin usuario"
             var nuevo = new URLSearchParams(location.search).get('nuevo');
@@ -185,6 +193,7 @@
             if (!id && !$('#servicio').val()) { toastr.error('Selecciona el restaurante'); return; }
             if (!datos.nombre) { toastr.error('Escribe el nombre'); return; }
             if (!datos.usuario) { toastr.error('Escribe el usuario'); return; }
+            if (/\s/.test(datos.usuario)) { toastr.error('El usuario no puede tener espacios'); return; }
             if (!id && !datos.password) { toastr.error('Escribe la contraseña'); return; }
             if (datos.password && datos.password.length < 4) { toastr.error('La contraseña debe tener al menos 4 caracteres'); return; }
 
