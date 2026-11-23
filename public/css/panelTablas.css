@@ -1,0 +1,32 @@
+/* Panel (AdminLTE): tablas con anchos segun su contenido. Se carga en todas las paginas (config/adminlte.php). */
+
+/* el contenido de cada celda centrado verticalmente */
+.table td,
+.table th {
+    vertical-align: middle;
+}
+
+/* columna de botones (Opciones): solo el ancho que necesitan, sin partir en lineas */
+.table td:has(.btn) {
+    width: 1%;
+    white-space: nowrap;
+}
+
+/* separacion entre botones de la misma celda */
+.table td .btn + .btn {
+    margin-left: 4px;
+}
+
+/* etiquetas (Activado, Desactivado...) sin partirse */
+.table td .badge {
+    white-space: nowrap;
+}
+
+/* la tabla ocupa todo el ancho y, si no cabe, se desplaza horizontalmente en vez de apretar columnas */
+.dataTables_wrapper .table {
+    width: 100% !important;
+}
+
+.dataTables_wrapper .row:nth-child(2) > div {
+    overflow-x: auto;
+}

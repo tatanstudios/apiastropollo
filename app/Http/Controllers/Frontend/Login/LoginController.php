@@ -151,7 +151,8 @@ class LoginController extends Controller
             // LA VALIDACION ES PARA 1 HORA
 
 
-            $url = env("APP_URL", "");
+            // dominio fijo de APP_URL (no el de la peticion, que un atacante podria falsificar)
+            $url = rtrim(config('app.url'), '/');
 
             $urlFinal = $url . "/admin/resetear/contrasena/administrador/" . $token;
 

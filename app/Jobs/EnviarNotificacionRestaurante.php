@@ -8,9 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
-use OneSignal;
-use Exception;
+use App\Services\OneSignalService;
 
 class EnviarNotificacionRestaurante implements ShouldQueue
 {
@@ -21,16 +19,14 @@ class EnviarNotificacionRestaurante implements ShouldQueue
      *
      * @return void
      */
-    protected $arrayOnesignal;
+    // ids de usuarios_servicios: se envia por external_id (app nueva) y por token_fcm (apps viejas)
+    protected $idsUsuarios;
     protected $titulo;
     protected $descripcion;
 
-    /**
-     * Create a new job instance.
-     */
-    public function __construct($arrayOnesignal, $titulo, $descripcion)
+    public function __construct(array $idsUsuarios, $titulo, $descripcion)
     {
-        $this->arrayOnesignal = $arrayOnesignal;
+        $this->idsUsuarios = $idsUsuarios;
         $this->titulo = $titulo;
         $this->descripcion = $descripcion;
     }
@@ -40,28 +36,11 @@ class EnviarNotificacionRestaurante implements ShouldQueue
      */
     public function handle(): void
     {
-        $tituloNoti = $this->titulo;
-        $mensajeNoti = $this->descripcion;
-
-        $contents = array(
-            "en" => $mensajeNoti
+        OneSignalService::enviarUsuariosRestaurante(
+            $this->idsUsuarios,
+            $this->titulo,
+            $this->descripcion,
+            config('googleapi.CanalRestaurante')
         );
-
-        $params = array(
-            'app_id' => '5c22da89-09a8-4b89-ad94-84172cdd14e8',
-            'contents' => $contents,
-            'include_player_ids' => is_array($this->arrayOnesignal) ? $this->arrayOnesignal : array($this->arrayOnesignal),
-            'android_channel_id' => '07dd3c69-2cb8-48ae-bb91-80828df2dd13'
-        );
-
-        $params['headings'] = array(
-            "en" => $tituloNoti
-        );
-
-        try {
-            OneSignal::sendNotificationCustom($params);
-        } catch (\Exception $e) {
-            Log::info("Error al enviar la notificación para Restaurante");
-        }
     }
 }

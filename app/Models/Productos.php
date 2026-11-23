@@ -14,4 +14,10 @@ class Productos extends Model
     protected $fillable = [
         'posicion'
     ];
+
+    /** Bloques de modificadores (opciones que elige el cliente). */
+    public function modificadores()
+    {
+        return $this->hasMany(ModificadorGrupo::class, 'id_productos');
+    }
 }

@@ -1,14 +1,15 @@
-@extends('backend.menus.superior')
+@extends('adminlte::page')
 
-@section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+@section('title', 'Panel')
+
+@section('css')
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/estiloToggle.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/buttons_estilo.css') }}" rel="stylesheet">
-
 @stop
 
+@section('content')
 <style>
     table{
         /*Ajustar tablas*/
@@ -63,15 +64,9 @@
         </div>
     </div>
 </section>
+@stop
 
-
-
-
-
-@extends('backend.menus.footerjs')
-@section('archivos-js')
-
-
+@section('js')
     <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/axios.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
@@ -203,6 +198,4 @@
 
 
     </script>
-
-
-@endsection
+@stop

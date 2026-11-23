@@ -16,6 +16,24 @@ class Administrador extends Authenticatable
     protected $table = 'administrador';
     public $timestamps = false;
 
+    // AdminLTE muestra Auth::user()->name en la barra superior; la tabla usa "nombre"
+    public function getNameAttribute(): ?string
+    {
+        return $this->nombre;
+    }
+
+    // texto debajo del nombre en el menu de usuario de AdminLTE: el rol
+    public function adminlte_desc(): string
+    {
+        return $this->getRoleNames()->implode(', ');
+    }
+
+    // boton "Perfil" del menu de usuario de AdminLTE
+    public function adminlte_profile_url(): string
+    {
+        return 'admin/editar-perfil/index';
+    }
+
 
     /**
      * The attributes that are mass assignable.

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Backend\Configuracion;
 
+
+use App\Services\OneSignalService;
 use App\Http\Controllers\Controller;
 use App\Models\Clientes;
 use App\Models\DireccionCliente;
@@ -57,46 +59,11 @@ class NotificacionesController extends Controller
             ->where('seleccionado', 1)
             ->get();
 
-        $pilaTokenCliente = array();
+        // a todos los clientes de esas zonas: por external_id (app nueva) y token_fcm (apps viejas)
+        $idsClientes = $arrayDirecciones->pluck('id_cliente')->unique()->values()->all();
 
-        foreach ($arrayDirecciones as $data){
-
-            $infoCliente = Clientes::where('id', $data->id_cliente)->first();
-
-            if($infoCliente->token_fcm != null){
-                array_push($pilaTokenCliente, $infoCliente->token_fcm);
-            }
-        }
-
-        if($pilaTokenCliente != null){
-
-            $tituloNoti = $request->titulo;
-            $mensajeNoti = $request->mensaje;
-
-
-            $AppId = config('googleapi.IdApp_Cliente');
-
-            $AppGrupoNotiPasivo = config('googleapi.IdGrupoPasivoCliente');
-
-
-            $tokenUsuario = $infoCliente->token_fcm;
-
-            $contents = array(
-                "en" => $mensajeNoti
-            );
-
-            $params = array(
-                'app_id' => $AppId,
-                'contents' => $contents,
-                'android_channel_id' => $AppGrupoNotiPasivo,
-                'include_player_ids' => is_array($tokenUsuario) ? $tokenUsuario : array($tokenUsuario)
-            );
-
-            $params['headings'] = array(
-                "en" => $tituloNoti
-            );
-
-            OneSignal::sendNotificationCustom($params);
+        if(!empty($idsClientes)){
+            OneSignalService::enviarClientes($idsClientes, $request->titulo, $request->mensaje);
         }
 
 
@@ -130,13 +97,8 @@ class NotificacionesController extends Controller
 
         if($info = DireccionCliente::where('id', $request->id)->first()){
 
-            $infoCliente = Clientes::where('id', $info->id_cliente)->first();
-
-            if($infoCliente->token_fcm != null){
-                return ['success' => 1, 'info' => $info];
-            }else{
-                return ['success' => 2];
-            }
+            // con la app nueva no hay token guardado (usa external_id): siempre se puede intentar
+            return ['success' => 1, 'info' => $info];
         }else{
             return ['success' => 99];
         }
@@ -158,43 +120,13 @@ class NotificacionesController extends Controller
 
         if($info = DireccionCliente::where('id', $request->id)->first()){
 
-            $infoCliente = Clientes::where('id', $info->id_cliente)->first();
+            // por external_id (app nueva) y token_fcm (apps viejas)
+            $resultado = OneSignalService::enviarClientes([$info->id_cliente], $request->titulo, $request->mensaje);
 
-            if($infoCliente->token_fcm != null){
-
-                // ENVIAR NOTIFICACION
-
-
-                $tituloNoti = $request->titulo;
-                $mensajeNoti = $request->mensaje;
-
-
-                $AppId = config('googleapi.IdApp_Cliente');
-
-                $AppGrupoNotiPasivo = config('googleapi.IdGrupoPasivoCliente');
-
-                $tokenUsuario = $infoCliente->token_fcm;
-
-                $contents = array(
-                    "en" => $mensajeNoti
-                );
-
-                $params = array(
-                    'app_id' => $AppId,
-                    'contents' => $contents,
-                    'android_channel_id' => $AppGrupoNotiPasivo,
-                    'include_player_ids' => is_array($tokenUsuario) ? $tokenUsuario : array($tokenUsuario)
-                );
-
-                $params['headings'] = array(
-                    "en" => $tituloNoti
-                );
-
-                OneSignal::sendNotificationCustom($params);
-
+            if($resultado === 'enviado'){
                 return ['success' => 1];
-
             }else{
+                // el cliente no tiene telefono vinculado (o fallo OneSignal)
                 return ['success' => 2];
             }
         }else{

@@ -1,7 +1,8 @@
-@extends('backend.menus.superior')
+@extends('adminlte::page')
 
-@section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+@section('title', 'Panel')
+
+@section('css')
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/select2.min.css') }}" type="text/css" rel="stylesheet">
@@ -9,6 +10,7 @@
     <link href="{{ asset('css/buttons_estilo.css') }}" rel="stylesheet">
 @stop
 
+@section('content')
 <style>
     table{
         /*Ajustar tablas*/
@@ -136,11 +138,9 @@
         </div>
     </div>
 </div>
+@stop
 
-
-@extends('backend.menus.footerjs')
-@section('archivos-js')
-
+@section('js')
     <script src="{{ asset('js/jquery.dataTables.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/dataTables.bootstrap4.js') }}" type="text/javascript"></script>
 
@@ -355,6 +355,4 @@
 
 
     </script>
-
-
-@endsection
+@stop

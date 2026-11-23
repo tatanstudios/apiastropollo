@@ -8,6 +8,7 @@
         "php": "^8.3",
         "berkayk/onesignal-laravel": "^2.5",
         "guzzlehttp/guzzle": "^7.9",
+        "jeroennoten/laravel-adminlte": "^3.16",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.5",
         "laravel/tinker": "^3.2",

@@ -1,98 +1,71 @@
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <table id="tabla" class="table table-bordered table-striped">
-                            <thead>
-                            <tr>
-                                <th style="width: 10%">Tipo Cupón</th>
-                                <th style="width: 6%">Nombre de Cupón</th>
-                                <th style="width: 8%">Límite de usos</th>
-                                <th style="width: 8%">Veces usado</th>
-                                <th style="width: 12%">Activo</th>
-                                <th style="width: 10%">Opciones</th>
-                            </tr>
-                            </thead>
-                            <tbody>
+<table id="tabla" class="table table-bordered table-striped table-hover" style="width: 100%">
+    <thead>
+    <tr>
+        <th>Código</th>
+        <th style="width: 200px">Usos</th>
+        <th>Dónde vale y qué regala</th>
+        <th style="width: 120px">Activo</th>
+        <th style="width: 90px">Opciones</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach($cupones as $dato)
+        <tr>
+            <td data-order="{{ $dato->texto_cupon }}">
+                <code class="h6 mb-0">{{ $dato->texto_cupon }}</code>
+                @if($dato->activo == 1 && $dato->agotado)
+                    <div><span class="badge bg-warning">Agotado</span></div>
+                @elseif($dato->activo == 1 && !$dato->premios->count())
+                    <div><span class="badge bg-warning">Sin restaurantes</span></div>
+                @endif
+            </td>
 
-                            @foreach($cupones as $dato)
-
-                                <tr>
-                                    <td>{{ $dato->tipocupon }}</td>
-                                    <td>{{ $dato->texto_cupon }}</td>
-                                    <td>{{ $dato->uso_limite }}</td>
-                                    <td>{{ $dato->contador }}</td>
-
-                                    <td>
-                                        @if($dato->activo == 0)
-                                            <span class="badge bg-danger">No</span>
-                                        @else
-                                            <span class="badge bg-success">Si</span>
-                                        @endif
-                                    </td>
-
-                                    <td>
-                                        <button type="button" class="btn btn-primary btn-xs" onclick="informacionCupon({{ $dato->id }})">
-                                            <i class="fas fa-eye" title="Editar"></i>&nbsp; Editar
-                                        </button>
-                                    </td>
-                                </tr>
-
-                            @endforeach
-
-
-                            </tbody>
-                        </table>
-                    </div>
+            <td data-order="{{ $dato->porcentaje }}">
+                {{ $dato->contador }} de {{ $dato->uso_limite }}
+                <div class="progress progress-xs mt-1" title="{{ $dato->porcentaje }}% usado">
+                    <div class="progress-bar {{ $dato->agotado ? 'bg-danger' : 'bg-success' }}" style="width: {{ $dato->porcentaje }}%"></div>
                 </div>
-            </div>
-        </div>
-    </div>
-</section>
+                <small class="text-muted">{{ max(0, $dato->uso_limite - $dato->contador) }} disponibles</small>
+            </td>
 
+            <td>
+                @forelse($dato->premios as $p)
+                    <div>
+                        <b>{{ $p->restaurante }}:</b> {{ $p->premio }}
+                        @if(!$p->acepta)
+                            <span class="badge badge-light border text-danger" title="Este restaurante tiene apagado 'Acepta cupones' (Restaurantes → Editar)">no acepta cupones</span>
+                        @endif
+                    </div>
+                @empty
+                    <span class="text-muted">Ningún restaurante</span>
+                @endforelse
+            </td>
+
+            <td data-order="{{ $dato->activo }}">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="activo-{{ $dato->id }}"
+                           {{ $dato->activo == 1 ? 'checked' : '' }}
+                           onchange="cambiarActivo({{ $dato->id }}, this)">
+                    <label class="custom-control-label" for="activo-{{ $dato->id }}">{{ $dato->activo == 1 ? 'Sí' : 'No' }}</label>
+                </div>
+            </td>
+
+            <td>
+                <button type="button" class="btn btn-primary btn-xs" onclick="abrirEditar({{ $dato->id }})">
+                    <i class="fas fa-pencil-alt"></i>&nbsp; Editar
+                </button>
+            </td>
+        </tr>
+    @endforeach
+    </tbody>
+</table>
+
+@include('backend.partials.datatable_es')
 <script>
     $(function () {
-        $("#tabla").DataTable({
-            "paging": true,
-            "lengthChange": true,
-            "searching": true,
-            "ordering": true,
-            "info": true,
-            "autoWidth": false,
-            "pagingType": "full_numbers",
-            "lengthMenu": [[10, 25, 50, 100, 150, -1], [10, 25, 50, 100, 150, "Todo"]],
-            "language": {
-
-                "sProcessing": "Procesando...",
-                "sLengthMenu": "Mostrar _MENU_ registros",
-                "sZeroRecords": "No se encontraron resultados",
-                "sEmptyTable": "Ningún dato disponible en esta tabla",
-                "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-                "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-                "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
-                "sInfoPostFix": "",
-                "sSearch": "Buscar:",
-                "sUrl": "",
-                "sInfoThousands": ",",
-                "sLoadingRecords": "Cargando...",
-                "oPaginate": {
-                    "sFirst": "Primero",
-                    "sLast": "Último",
-                    "sNext": "Siguiente",
-                    "sPrevious": "Anterior"
-                },
-                "oAria": {
-                    "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
-                    "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-                }
-
-            },
-            "responsive": true, "lengthChange": true, "autoWidth": false,
+        iniciarTabla('#tabla', {
+            "order": [[0, 'asc']],
+            "columnDefs": [{ "orderable": false, "targets": [2, 4] }]
         });
     });
-
-
 </script>
-

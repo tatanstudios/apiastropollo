@@ -2,21 +2,20 @@
 
 namespace App\Http\Controllers\Api\Ordenes;
 
+
+use App\Services\OneSignalService;
 use App\Http\Controllers\Controller;
 use App\Jobs\EnviarNotificacion;
-use App\Jobs\EnviarNotificacionMotorista;
 use App\Jobs\EnviarNotificacionRestaurante;
 use App\Jobs\EnviarNotificacionUsuario;
 use App\Models\Categorias;
 use App\Models\Clientes;
 use App\Models\Cupones;
-use App\Models\MotoristasServicios;
 use App\Models\Ordenes;
 use App\Models\OrdenesDescripcion;
 use App\Models\OrdenesDirecciones;
-use App\Models\OrdenesMotoristas;
-use App\Models\OrdenesPremio;
 use App\Models\Productos;
+use App\Models\Servicios;
 use App\Models\SubCategorias;
 use App\Models\UsuariosServicios;
 use App\Models\Zonas;
@@ -48,7 +47,13 @@ class ApiOrdenesRestauranteController extends Controller
             }
 
 
-            if($request->idfirebase != null){
+            if($request->externo == 1){
+                // app nueva: usa external_id de OneSignal, el token viejo ya no hace falta
+                if($infoUsuario->token_fcm != null){
+                    UsuariosServicios::where('id', $infoUsuario->id)->update(['token_fcm' => null]);
+                }
+            }
+            else if($request->idfirebase != null){
                 UsuariosServicios::where('id', $infoUsuario->id)->update(['token_fcm' => $request->idfirebase]);
             }
 
@@ -81,14 +86,6 @@ class ApiOrdenesRestauranteController extends Controller
 
                 if ($info->id_cupones != null) {
                     $haycupon = 1;
-
-                    // SI ESTO NO ESTA NULL, SIGNIFICA QUE SE APLICO CUPON DINERO O PORCENTAJE
-
-                    if ($info->total_cupon != null) {
-
-                        $totalAPagar = $info->total_cupon;
-
-                    }
                 }
 
                 $info->totalformat = '$' . number_format((float)$totalAPagar, 2, '.', ',');
@@ -101,21 +98,14 @@ class ApiOrdenesRestauranteController extends Controller
                 $info->referencia = $infoOrdenesDireccion->referencia;
 
 
-                $haypremio = 0;
-                $textopremio = "";
-
-                if($infoOrdenPremio = OrdenesPremio::where('id_ordenes', $info->id)->first()){
-                    // si se canjeo premio
-
-                    $haypremio = 1;
-                    $textopremio = $infoOrdenPremio->nombre;
-                }
-
-                $info->haypremio = $haypremio;
-                $info->textopremio = $textopremio;
             }
 
-            return ['success' => 2, 'hayordenes' => $conteo, 'ordenes' => $arrayOrdenes];
+            // para el menu lateral de la app: restaurante y usuario con sesion
+            $nombreRestaurante = Servicios::where('id', $infoUsuario->id_servicios)->value('nombre');
+            $nombreUsuario = $infoUsuario->nombre ?: $infoUsuario->usuario;
+
+            return ['success' => 2, 'hayordenes' => $conteo, 'ordenes' => $arrayOrdenes,
+                'restaurante' => $nombreRestaurante, 'usuario' => $nombreUsuario, 'login' => $infoUsuario->usuario];
         }else{
             return ['success' => 3];
         }
@@ -139,7 +129,13 @@ class ApiOrdenesRestauranteController extends Controller
 
             $lista = OrdenesDescripcion::where('id_ordenes', $infoOrden->id)->get();
 
+            // opciones elegidas (copiadas al ordenar): [idOrdenDescripcion => ['texto' => [...], 'extra' => x]]
+            $opcionesOrden = \App\Services\Modificadores::deOrden($lista->pluck('id')->all());
+
             foreach ($lista as $info){
+
+                // ej. ["Elegir sabor: Naranja"]; el precio guardado ya incluye las opciones
+                $info->opciones = $opcionesOrden[$info->id]['texto'] ?? [];
 
                 $infoProducto = Productos::where('id', $info->id_producto)->first();
                 $info->nombreproducto = $infoProducto->nombre;
@@ -181,7 +177,13 @@ class ApiOrdenesRestauranteController extends Controller
 
             $lista = OrdenesDescripcion::where('id', $infoOrdenDescr->id)->get();
 
+            // opciones elegidas (copiadas al ordenar): [idOrdenDescripcion => ['texto' => [...], 'extra' => x]]
+            $opcionesOrden = \App\Services\Modificadores::deOrden($lista->pluck('id')->all());
+
             foreach ($lista as $info){
+
+                // ej. ["Elegir sabor: Naranja"]; el precio guardado ya incluye las opciones
+                $info->opciones = $opcionesOrden[$info->id]['texto'] ?? [];
 
                 $infoProducto = Productos::where('id', $info->id_producto)->first();
                 $info->nombreproducto = $infoProducto->nombre;
@@ -244,49 +246,18 @@ class ApiOrdenesRestauranteController extends Controller
                 Ordenes::where('id', $infoOrden->id)
                     ->update(['estado_iniciada' => 1,
                               'fecha_iniciada' => $fechaHoy,
-                              'fecha_estimada' => $horaEstimada]);
+                              'fecha_estimada' => $horaEstimada,
+                              // iniciar es el ultimo paso: la orden pasa al historial del cliente
+                              'visible' => 0]);
 
 
 
                 // NOTIFICACION ONE SIGNAL A CLIENTE
 
-                $infoCliente = Clientes::where('id', $infoOrden->id_cliente)->first();
-
-                if($infoCliente->token_fcm != null){
-
-                    $tituloNoti = "Orden #" . $infoOrden->id . " Aceptada";
-                    $mensajeNoti = "Su orden inicia su Preparación";
-
-
-                    $tokenUsuario = $infoCliente->token_fcm;
-
-                    if($tokenUsuario != null){
-                        dispatch(new EnviarNotificacionUsuario($tokenUsuario, $tituloNoti, $mensajeNoti));
-                    }
-                }
-
-                // NOTIFICACION ONE SIGNAL QUE HAY ORDENES QUE PUEDEN SER AGARRADAS YA
-                $arrayMotoristas = MotoristasServicios::where('id_servicios', $infoOrden->id_servicio)
-                    ->where('activo', 1)
-                    ->where('notificacion', 1)
-                    ->get();
-
-                $pilaMotoristas = array();
-
-                foreach($arrayMotoristas as $p){
-                    if($p->token_fcm != null){
-                        array_push($pilaMotoristas, $p->token_fcm);
-                    }
-                }
-
-
-                if($pilaMotoristas != null) {
-                    $tituloNoti = "Hay Nuevas Ordenes";
-                    $mensajeNoti = "Por Favor Verificar";
-                    // ENVIAR NOTIFICACIONES A MOTORISTAS
-
-                    dispatch(new EnviarNotificacionMotorista($pilaMotoristas, $tituloNoti, $mensajeNoti));
-                }
+                // por external_id (app nueva) y token_fcm (apps viejas)
+                $tituloNoti = "Orden #" . $infoOrden->id . " Aceptada";
+                $mensajeNoti = "Su orden inicia su Preparación";
+                dispatch(new EnviarNotificacionUsuario([$infoOrden->id_cliente], $tituloNoti, $mensajeNoti));
 
                 $titulo = "Nota";
                 $mensaje = "Orden Iniciada";
@@ -350,20 +321,7 @@ class ApiOrdenesRestauranteController extends Controller
 
 
 
-                // SE DEVULVEN LOS PUNTOS DEL PREMIO SI CANCELO EL CLIENTE
 
-                if($infoOrdenPremio = OrdenesPremio::where('id_ordenes', $infoOrden->id)->first()){
-
-                    $infoCliente = Clientes::where('id', $infoOrdenPremio->id_cliente)->first();
-
-                    // SUMAR LOS PUNTOS AL CLUENTE
-                    $suma = $infoCliente->puntos + $infoOrdenPremio->puntos;
-
-                    Clientes::where('id', $infoCliente->id)->update([
-                        'puntos' => $suma]);
-
-
-                }
 
 
 
@@ -381,40 +339,10 @@ class ApiOrdenesRestauranteController extends Controller
                 }
 
                     // notificacion a cliente que su orden fue cancelada
-                    $infoCliente = Clientes::where('id', $infoOrden->id_cliente)->first();
-
-                    if($infoCliente->token_fcm != null){
-
-                        $tituloNoti = "Orden #" . $infoOrden->id . " Cancelada";
-                        $mensajeNoti = "Fue cancelada por Restaurante";
-
-                        // ENVIAR NOTIFICACION
-
-
-                        $AppId = config('googleapi.IdApp_Cliente');
-
-                        $AppGrupoNotiPasivo = config('googleapi.IdGrupoPasivoCliente');
-
-                        $tokenUsuario = $infoCliente->token_fcm;
-
-                        $contents = array(
-                            "en" => $mensajeNoti
-                        );
-
-                        $params = array(
-                            'app_id' => $AppId,
-                            'contents' => $contents,
-                            'android_channel_id' => $AppGrupoNotiPasivo,
-                            'include_player_ids' => is_array($tokenUsuario) ? $tokenUsuario : array($tokenUsuario)
-                        );
-
-                        $params['headings'] = array(
-                            "en" => $tituloNoti
-                        );
-
-                        OneSignal::sendNotificationCustom($params);
-
-                    }
+                    // por external_id (app nueva) y token_fcm (apps viejas); despues de responder
+                    $tituloNoti = "Orden #" . $infoOrden->id . " Cancelada";
+                    $mensajeNoti = "Fue cancelada por Restaurante";
+                    dispatch(new EnviarNotificacionUsuario([$infoOrden->id_cliente], $tituloNoti, $mensajeNoti));
 
                     DB::commit();
 
@@ -441,185 +369,6 @@ class ApiOrdenesRestauranteController extends Controller
 
 
 
-    public function preparacionOrdenes(Request $request){
-
-        $rules = array(
-            'id' => 'required',
-        );
-
-        $validator = Validator::make($request->all(), $rules);
-
-        if($validator->fails()){return ['success' => 0]; }
-
-        if($infoUsuario = UsuariosServicios::where('id', $request->id)->first()){
-
-            $arrayOrdenes = Ordenes::where('estado_iniciada', 1)
-                ->where('estado_cancelada', 0)
-                ->where('estado_preparada', 0)
-                ->where('id_servicio', $infoUsuario->id_servicios)
-                ->orderBy('id', 'ASC')
-                ->get();
-
-            $conteo = 0;
-
-            foreach($arrayOrdenes as $info){
-                $conteo++;
-
-                $infoOrdenesDireccion = OrdenesDirecciones::where('id_ordenes', $info->id)->first();
-
-                $info->fecha_orden = date("h:i A d-m-Y", strtotime($info->fecha_orden));
-
-                // CUPONES
-                $haycupon = 0;
-                $totalAPagar = $info->total_orden;
-
-                if ($info->id_cupones != null) {
-                    $haycupon = 1;
-
-                    // SI ESTO NO ESTA NULL, SIGNIFICA QUE SE APLICO CUPON DINERO O PORCENTAJE
-
-                    if ($info->total_cupon != null) {
-
-                        $totalAPagar = $info->total_cupon;
-
-                    }
-                }
-
-                $info->totalformat = '$' . number_format((float)$totalAPagar, 2, '.', ',');
-
-                $info->haycupon = $haycupon;
-                $info->cliente = $infoOrdenesDireccion->nombre;
-                $info->direccion = $infoOrdenesDireccion->direccion;
-                $info->telefono = $infoOrdenesDireccion->telefono;
-                $info->referencia = $infoOrdenesDireccion->referencia;
-
-
-
-                $haypremio = 0;
-                $textopremio = "";
-
-                if($infoOrdenPremio = OrdenesPremio::where('id_ordenes', $info->id)->first()){
-                    // si se canjeo premio
-
-                    $haypremio = 1;
-                    $textopremio = $infoOrdenPremio->nombre;
-                }
-
-                $info->haypremio = $haypremio;
-                $info->textopremio = $textopremio;
-            }
-
-            return ['success' => 1, 'hayordenes' => $conteo, 'ordenes' => $arrayOrdenes];
-        }else{
-            return ['success' => 3];
-        }
-    }
-
-
-
-    public function finalizarOrdenPorRestaurante(Request $request){
-
-        $reglaDatos = array(
-            'idorden' => 'required',
-        );
-
-        $validarDatos = Validator::make($request->all(), $reglaDatos);
-
-        if($validarDatos->fails()){return ['success' => 0]; }
-
-        if($infoOrden = Ordenes::where('id', $request->idorden)->first()){
-
-            // ORDEN ESTA CANCELADA
-            if($infoOrden->estado_cancelada == 1){
-                // solo decir que esta cancelada y no se mostrara ya
-                $titulo = "Orden Cancelada";
-                $mensaje = "Fue cancelada";
-                return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
-            }
-
-            // FINALIZAR LA ORDEN
-            if($infoOrden->estado_preparada == 0){
-
-                $fecha = Carbon::now('America/El_Salvador');
-
-
-                Ordenes::where('id', $infoOrden->id)
-                    ->update(['estado_preparada' => 1,
-                        'fecha_preparada' => $fecha]);
-
-
-                // NOTIFICACION ONE SIGNAL  A MOTORISTA QUE TIENE LA ORDEN SELECCIONADA
-
-                if($infoOrdenMoto = OrdenesMotoristas::where('id_ordenes', $infoOrden->id)->first()){
-
-                    // un motorista ya tiene la orden seleccionada
-                    $infoMotorista = MotoristasServicios::where('id', $infoOrdenMoto->id_motorista)->first();
-
-                    if($infoMotorista->token_fcm != null){
-
-                        $tituloNoti = "Orden #" . $infoOrden->id;
-                        $mensajeNoti = "Esta lista para Entrega";
-
-                        // ENVIAR NOTIFICACIONES A MOTORISTA
-
-
-
-                        $tokenMotorista = $infoMotorista->token_fcm;
-
-                        if($tokenMotorista != null){
-                            dispatch(new EnviarNotificacionMotorista($tokenMotorista, $tituloNoti, $mensajeNoti));
-                        }
-                    }
-
-                }else{
-
-                    // NO HAY MOTORISTAS ASI QUE ENVIAR NOTIFICACION (POR RESTAURANTE)
-
-                    $arrayMotoristas = MotoristasServicios::where('id_servicios', $infoOrden->id_servicio)
-                        ->where('activo', 1)
-                        ->where('notificacion', 1)
-                        ->get();
-
-                    $pilaMotoristas = array();
-
-                    foreach($arrayMotoristas as $p){
-                        if($p->token_fcm != null){
-                            array_push($pilaMotoristas, $p->token_fcm);
-                        }
-                    }
-
-
-                    if($pilaMotoristas != null) {
-                        $tituloNoti = "Una Orden Sin Motorista";
-                        $mensajeNoti = "Por Favor Verificar";
-                        // ENVIAR NOTIFICACIONES A TODOS LOS MOTORISTAS DEL RESTAURANTE
-
-
-                        dispatch(new EnviarNotificacionMotorista($pilaMotoristas, $tituloNoti, $mensajeNoti));
-                    }
-                }
-
-
-                $titulo = "Nota";
-                $mensaje = "Orden Finalizada";
-
-                // orden iniciada
-                return ['success' => 2, 'titulo' => $titulo, 'mensaje' => $mensaje];
-            }
-
-            $titulo = "Nota";
-            $mensaje = "Orden Finalizada";
-
-            // orden finalizada por defecto
-            return ['success'=> 2, 'titulo' => $titulo, 'mensaje' => $mensaje];
-        }else{
-            return ['success'=> 3];
-        }
-    }
-
-
-
-
     public function completadasHoyOrdenes(Request $request){
 
         $rules = array(
@@ -634,9 +383,10 @@ class ApiOrdenesRestauranteController extends Controller
 
             $fecha = Carbon::now('America/El_Salvador');
 
-            $arrayOrdenes = Ordenes::where('estado_preparada', 1)
+            // ordenes iniciadas hoy (iniciar es el ultimo paso del restaurante)
+            $arrayOrdenes = Ordenes::where('estado_iniciada', 1)
                 ->where('estado_cancelada', 0)
-                ->whereDate('fecha_preparada', $fecha)
+                ->whereDate('fecha_iniciada', $fecha)
                 ->where('id_servicio', $infoUsuario->id_servicios)
                 ->orderBy('id', 'ASC')
                 ->get();
@@ -650,7 +400,8 @@ class ApiOrdenesRestauranteController extends Controller
 
                 $info->fecha_orden = date("h:i A d-m-Y", strtotime($info->fecha_orden));
 
-                $info->fecha_preparada = date("h:i A d-m-Y", strtotime($info->fecha_orden));
+                // la app del restaurante muestra este campo como "Inicio"
+                $info->fecha_preparada = date("h:i A d-m-Y", strtotime($info->fecha_iniciada));
 
                 // CUPONES
                 $haycupon = 0;
@@ -658,14 +409,6 @@ class ApiOrdenesRestauranteController extends Controller
 
                 if ($info->id_cupones != null) {
                     $haycupon = 1;
-
-                    // SI ESTO NO ESTA NULL, SIGNIFICA QUE SE APLICO CUPON DINERO O PORCENTAJE
-
-                    if ($info->total_cupon != null) {
-
-                        $totalAPagar = $info->total_cupon;
-
-                    }
                 }
 
                 $info->totalformat = '$' . number_format((float)$totalAPagar, 2, '.', ',');
@@ -678,18 +421,6 @@ class ApiOrdenesRestauranteController extends Controller
                 $info->referencia = $infoOrdenesDireccion->referencia;
 
 
-                $haypremio = 0;
-                $textopremio = "";
-
-                if($infoOrdenPremio = OrdenesPremio::where('id_ordenes', $info->id)->first()){
-                    // si se canjeo premio
-
-                    $haypremio = 1;
-                    $textopremio = $infoOrdenPremio->nombre;
-                }
-
-                $info->haypremio = $haypremio;
-                $info->textopremio = $textopremio;
             }
 
             return ['success' => 1, 'hayordenes' => $conteo, 'ordenes' => $arrayOrdenes];
@@ -737,14 +468,6 @@ class ApiOrdenesRestauranteController extends Controller
 
                 if ($info->id_cupones != null) {
                     $haycupon = 1;
-
-                    // SI ESTO NO ESTA NULL, SIGNIFICA QUE SE APLICO CUPON DINERO O PORCENTAJE
-
-                    if ($info->total_cupon != null) {
-
-                        $totalAPagar = $info->total_cupon;
-
-                    }
                 }
 
                 $info->totalformat = '$' . number_format((float)$totalAPagar, 2, '.', ',');
@@ -757,18 +480,6 @@ class ApiOrdenesRestauranteController extends Controller
                 $info->referencia = $infoOrdenesDireccion->referencia;
 
 
-                $haypremio = 0;
-                $textopremio = "";
-
-                if($infoOrdenPremio = OrdenesPremio::where('id_ordenes', $info->id)->first()){
-                    // si se canjeo premio
-
-                    $haypremio = 1;
-                    $textopremio = $infoOrdenPremio->nombre;
-                }
-
-                $info->haypremio = $haypremio;
-                $info->textopremio = $textopremio;
             }
 
             return ['success' => 1, 'hayordenes' => $conteo, 'ordenes' => $arrayOrdenes];
@@ -948,15 +659,7 @@ class ApiOrdenesRestauranteController extends Controller
                 // POR PRIORIDAD
 
                 if ($info->estado_iniciada == 1) {
-                    $estado = "Orden Preparandose";
-                }
-
-                if ($info->estado_preparada == 1) {
-                    $estado = "Orden Finalizada";
-                }
-
-                if ($info->estado_entrega == 1) {
-                    $estado = "Orden Entregada al Cliente";
+                    $estado = "Orden Iniciada";
                 }
 
                 if ($info->estado_cancelada == 1) {
@@ -975,14 +678,6 @@ class ApiOrdenesRestauranteController extends Controller
 
                 if ($info->id_cupones != null) {
                     $haycupon = 1;
-
-                    // SI ESTO NO ESTA NULL, SIGNIFICA QUE SE APLICO CUPON DINERO O PORCENTAJE
-
-                    if ($info->total_cupon != null) {
-
-                        $totalAPagar = $info->total_cupon;
-
-                    }
                 }
 
                 $info->totalformat = '$' . number_format((float)$totalAPagar, 2, '.', ',');
@@ -996,18 +691,6 @@ class ApiOrdenesRestauranteController extends Controller
 
 
 
-                $haypremio = 0;
-                $textopremio = "";
-
-                if($infoOrdenPremio = OrdenesPremio::where('id_ordenes', $info->id)->first()){
-                    // si se canjeo premio
-
-                    $haypremio = 1;
-                    $textopremio = $infoOrdenPremio->nombre;
-                }
-
-                $info->haypremio = $haypremio;
-                $info->textopremio = $textopremio;
             }
 
 
@@ -1024,40 +707,41 @@ class ApiOrdenesRestauranteController extends Controller
             'id' => 'required'
         );
 
-        // tokenid
+        // tokenid (apps viejas) | externo = 1 (app nueva, usa external_id de OneSignal)
 
         $validator = Validator::make($request->all(), $rules);
 
         if ( $validator->fails()){return ['success' => 0];}
 
-
         if($infoAfiliado = UsuariosServicios::where('id', $request->id)->first()){
 
-            UsuariosServicios::where('id', $request->id)
-                ->update(['token_fcm' => $request->tokenid]);
+            if($request->externo == 1){
+                UsuariosServicios::where('id', $infoAfiliado->id)->update(['token_fcm' => null]);
+            }
+            else if(!empty($request->tokenid)){
+                // antes se enviaba al token anterior (se leia antes de actualizarlo)
+                UsuariosServicios::where('id', $infoAfiliado->id)->update(['token_fcm' => $request->tokenid]);
+            }
 
-                if($infoAfiliado->token_fcm != null){
+            // se envia en el momento para decirle a la app si llego a algun telefono
+            $resultado = OneSignalService::enviarUsuariosRestaurante(
+                [$infoAfiliado->id],
+                "Notificación de prueba",
+                "Este teléfono recibe los avisos de órdenes nuevas",
+                config('googleapi.CanalRestaurante')
+            );
 
-                    // ENVIAR NOTIFICACION
-
-                    $mensaje = "Modo Prueba";
-                    $titulo = "Se recibe notificaciones";
-
-                    dispatch(new EnviarNotificacionRestaurante($infoAfiliado->token_fcm, $mensaje, $titulo));
-
-                    return ['success' => 1];
-                }
-                else{
-                    return ['success' => 2];
-                }
-
-
+            if($resultado === 'enviado'){
+                return ['success' => 1];
+            }
+            if($resultado === 'sin_dispositivo'){
+                // OneSignal no tiene ningun telefono vinculado a este usuario
+                return ['success' => 2, 'mensaje' => 'Este teléfono todavía no está registrado para recibir avisos.'];
+            }
+            return ['success' => 3, 'mensaje' => 'El servidor no pudo enviar la notificación. Revisa la configuración de OneSignal.'];
         }
-        else{
-            return ['success' => 2];
-        }
 
-
+        return ['success' => 99];
     }
 
 

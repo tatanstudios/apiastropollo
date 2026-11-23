@@ -1,19 +1,14 @@
-@extends('backend.menus.superior')
+@extends('adminlte::page')
 
-@section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+@section('title', 'Rol y Permisos')
+
+@section('css')
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
+    <link href="{{ asset('css/responsive.bootstrap4.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
-    <link href="{{ asset('css/buttons_estilo.css') }}" rel="stylesheet">
 @stop
 
-<style>
-    table{
-        /*Ajustar tablas*/
-        table-layout:fixed;
-    }
-</style>
-
+@section('content')
 <div id="divcontenedor" style="display: none">
     <section class="content-header">
         <div class="container-fluid">
@@ -22,16 +17,15 @@
             </div>
             <br>
 
-            <button type="button" style="font-weight: bold; background-color: #28a745; color: white !important;" value="Nuevo Rol" onclick="modalAgregar()" class="button button-3d button-rounded button-pill button-small">
+            <button type="button" class="btn btn-success btn-sm" onclick="modalAgregar()">
                 <i class="fas fa-edit"></i>
                 Nuevo Rol
             </button>
 
-            <button type="button" style="font-weight: bold; background-color: #28a745; color: white !important;" value="Lista de Permisos" onclick="vistaPermisos()" class="button button-3d button-rounded button-pill button-small">
+            <button type="button" class="btn btn-success btn-sm" onclick="vistaPermisos()">
                 <i class="fas fa-list-alt"></i>
                 Lista de Permisos
             </button>
-
         </div>
     </section>
 
@@ -42,11 +36,7 @@
                     <h3 class="card-title">Lista</h3>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div id="tablaDatatable"></div>
-                        </div>
-                    </div>
+                    <div id="tablaDatatable"></div>
                 </div>
             </div>
         </div>
@@ -62,24 +52,42 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form id="formulario-nuevo">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-12">
-
-                                    <div class="form-group">
-                                        <label>Nombre</label>
-                                        <input type="text" maxlength="30" class="form-control" id="nombre-nuevo" placeholder="Nombre">
-                                    </div>
-
-                                </div>
-                            </div>
+                    <form id="formulario-nuevo" onsubmit="return false;">
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input type="text" maxlength="30" autocomplete="off" class="form-control" id="nombre-nuevo" placeholder="Nombre">
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="button" style="background-color: #28a745; color: white !important;" class="button button-3d button-rounded button-pill button-small" onclick="agregarRol()">Agregar</button>
+                    <button type="button" class="btn btn-primary" onclick="agregarRol()">Agregar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditar">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Editar Rol</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formulario-editar" onsubmit="return false;">
+                        <input type="hidden" id="id-editar">
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input type="text" maxlength="30" autocomplete="off" class="form-control" id="nombre-editar" placeholder="Nombre">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="editarRol()">Guardar</button>
                 </div>
             </div>
         </div>
@@ -89,60 +97,52 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title">Borrar Rol Global</h4>
+                    <h4 class="modal-title">Eliminar Rol</h4>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form id="formulario-borrar">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-12">
-
-                                    <p>Esta acción eliminara el Rol con todos sus Permisos.</p>
-
-                                    <div class="form-group">
-                                        <input type="hidden" id="idborrar">
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+                    <input type="hidden" id="idborrar">
+                    <p>Esta acción eliminará el rol <b id="nombre-borrar"></b> con todos sus permisos.</p>
+                    <p id="aviso-usuarios" class="text-danger" style="display: none"></p>
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="button" style="font-weight: bold; background-color: #ff4351; color: white !important;" class="button button-3d button-rounded button-pill button-small" onclick="borrar()">Borrar</button>
+                    <button type="button" class="btn btn-danger" onclick="borrar()">Eliminar</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+@stop
 
-@extends('backend.menus.footerjs')
-@section('archivos-js')
-
+@section('js')
     <script src="{{ asset('js/jquery.dataTables.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/dataTables.bootstrap4.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('js/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ asset('js/responsive.bootstrap4.min.js') }}"></script>
 
     <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/axios.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/alertaPersonalizada.js') }}"></script>
 
-
-    <!-- incluir tabla -->
     <script type="text/javascript">
         $(document).ready(function(){
-            var ruta = "{{ URL::to('/admin/roles/tabla') }}";
-            $('#tablaDatatable').load(ruta);
+            recargar();
             document.getElementById("divcontenedor").style.display = "block";
         });
     </script>
 
     <script>
 
+        function recargar(){
+            var ruta = "{{ url('/admin/roles/tabla') }}";
+            $('#tablaDatatable').load(ruta);
+        }
+
+        // ver y asignar permisos del rol
         function verInformacion(id){
             window.location.href="{{ url('/admin/roles/lista/permisos') }}/"+id;
         }
@@ -157,31 +157,125 @@
             $('#modalAgregar').modal('show');
         }
 
-        function modalBorrar(id){
-            // se obtiene el id del Rol a eliminar globalmente
+        function agregarRol(){
+            var nombre = document.getElementById('nombre-nuevo').value.trim();
 
+            if(nombre === ''){
+                toastr.error('Nombre es requerido');
+                return;
+            }
+
+            if(nombre.length > 30){
+                toastr.error('Máximo 30 caracteres para Nombre');
+                return;
+            }
+
+            openLoading();
+            var formData = new FormData();
+            formData.append('nombre', nombre);
+
+            axios.post('/admin/permisos/nuevo-rol', formData)
+                .then((response) => {
+                    closeLoading();
+
+                    if (response.data.success === 1) {
+                        toastr.error('Ya existe un rol con ese nombre');
+                    }
+                    else if(response.data.success === 2){
+                        toastr.success('Rol agregado');
+                        $('#modalAgregar').modal('hide');
+                        recargar();
+                    }
+                    else {
+                        toastr.error('Error al guardar');
+                    }
+                })
+                .catch((error) => {
+                    closeLoading();
+                    toastr.error('Error al guardar');
+                });
+        }
+
+        function modalEditar(id, nombre){
+            $('#id-editar').val(id);
+            $('#nombre-editar').val(nombre);
+            $('#modalEditar').modal('show');
+        }
+
+        function editarRol(){
+            var id = document.getElementById('id-editar').value;
+            var nombre = document.getElementById('nombre-editar').value.trim();
+
+            if(nombre === ''){
+                toastr.error('Nombre es requerido');
+                return;
+            }
+
+            if(nombre.length > 30){
+                toastr.error('Máximo 30 caracteres para Nombre');
+                return;
+            }
+
+            openLoading();
+            var formData = new FormData();
+            formData.append('idrol', id);
+            formData.append('nombre', nombre);
+
+            axios.post('/admin/roles/editar', formData)
+                .then((response) => {
+                    closeLoading();
+
+                    if (response.data.success === 1) {
+                        toastr.error('Ya existe un rol con ese nombre');
+                    }
+                    else if(response.data.success === 2){
+                        toastr.success('Rol actualizado');
+                        $('#modalEditar').modal('hide');
+                        recargar();
+                    }
+                    else {
+                        toastr.error('Error al actualizar');
+                    }
+                })
+                .catch((error) => {
+                    closeLoading();
+                    toastr.error('Error al actualizar');
+                });
+        }
+
+        function modalBorrar(id, nombre, usuarios){
             $('#idborrar').val(id);
+            $('#nombre-borrar').text(nombre);
+
+            if(usuarios > 0){
+                $('#aviso-usuarios').text(usuarios + ' usuario(s) tienen este rol y quedarán sin rol.').show();
+            }else{
+                $('#aviso-usuarios').hide();
+            }
+
             $('#modalBorrar').modal('show');
         }
 
         function borrar(){
-            openLoading()
-            // se envia el ID del Rol
+            openLoading();
             var idrol = document.getElementById('idborrar').value;
 
             var formData = new FormData();
             formData.append('idrol', idrol);
 
-            axios.post('/admin/roles/borrar-global', formData, {
-            })
+            axios.post('/admin/roles/borrar-global', formData)
                 .then((response) => {
-                    closeLoading()
+                    closeLoading();
                     $('#modalBorrar').modal('hide');
 
                     if(response.data.success === 1){
-                        toastr.success('Rol global eliminado');
+                        toastr.success('Rol eliminado');
                         recargar();
-                    }else{
+                    }
+                    else if(response.data.success === 2){
+                        toastr.error('Perderías el acceso a Roles y Permisos: asígnate primero otro rol que tenga ese permiso');
+                    }
+                    else{
                         toastr.error('Error al eliminar');
                     }
                 })
@@ -191,52 +285,5 @@
                 });
         }
 
-        function agregarRol(){
-            var nombre = document.getElementById('nombre-nuevo').value;
-
-            if(nombre === ''){
-                toastr.error('Nombre es requerido')
-                return;
-            }
-
-            if(nombre.length > 30){
-                toastr.error('Máximo 30 caracteres para Nombre')
-                return;
-            }
-
-            openLoading()
-            var formData = new FormData();
-            formData.append('nombre', nombre);
-
-            axios.post('/admin/permisos/nuevo-rol', formData, {
-            })
-                .then((response) => {
-                    closeLoading()
-
-                    if (response.data.success === 1) {
-                        toastr.error('Rol Repetido', 'Cambiar de nombre');
-                    }
-                    else if(response.data.success === 2){
-                        $('#modalAgregar').modal('hide');
-                        recargar();
-                    }
-                    else {
-                        toastr.error('Error al guardar');
-                    }
-                })
-                .catch((error) => {
-                    closeLoading()
-                    toastr.error('Error al guardar');
-                });
-        }
-
-        function recargar(){
-            var ruta = "{{ url('/admin/roles/tabla') }}";
-            $('#tablaDatatable').load(ruta);
-        }
-
     </script>
-
-
-
 @stop

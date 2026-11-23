@@ -1,434 +1,175 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-    <!--[if gte mso 9]>
-    <xml>
-        <o:OfficeDocumentSettings>
-            <o:AllowPNG/>
-            <o:PixelsPerInch>96</o:PixelsPerInch>
-        </o:OfficeDocumentSettings>
-    </xml>
-    <![endif]-->
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="x-apple-disable-message-reformatting">
-    <!--[if !mso]><!--><meta http-equiv="X-UA-Compatible" content="IE=edge"><!--<![endif]-->
-    <title></title>
-
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>Código de Recuperación - Astro Pollo App</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:AllowPNG/>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
     <style type="text/css">
-        @media only screen and (min-width: 620px) {
-            .u-row {
-                width: 600px !important;
-            }
-            .u-row .u-col {
-                vertical-align: top;
-            }
+        body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; display: block; }
+        a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
 
-            .u-row .u-col-50 {
-                width: 300px !important;
-            }
-
-            .u-row .u-col-100 {
-                width: 600px !important;
-            }
-
+        @media only screen and (max-width: 620px) {
+            .container { width: 100% !important; }
+            .px { padding-left: 24px !important; padding-right: 24px !important; }
+            .title { font-size: 24px !important; line-height: 32px !important; }
+            .code { font-size: 30px !important; letter-spacing: 6px !important; }
         }
-
-        @media (max-width: 620px) {
-            .u-row-container {
-                max-width: 100% !important;
-                padding-left: 0px !important;
-                padding-right: 0px !important;
-            }
-            .u-row .u-col {
-                min-width: 320px !important;
-                max-width: 100% !important;
-                display: block !important;
-            }
-            .u-row {
-                width: 100% !important;
-            }
-            .u-col {
-                width: 100% !important;
-            }
-            .u-col > div {
-                margin: 0 auto;
-            }
-        }
-        body {
-            margin: 0;
-            padding: 0;
-        }
-
-        table,
-        tr,
-        td {
-            vertical-align: top;
-            border-collapse: collapse;
-        }
-
-        p {
-            margin: 0;
-        }
-
-        .ie-container table,
-        .mso-container table {
-            table-layout: fixed;
-        }
-
-        * {
-            line-height: inherit;
-        }
-
-        a[x-apple-data-detectors='true'] {
-            color: inherit !important;
-            text-decoration: none !important;
-        }
-
-        table, td { color: #000000; } #u_body a { color: #161a39; text-decoration: underline; }
     </style>
-
-
-
-    <!--[if !mso]><!--><link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" type="text/css"><!--<![endif]-->
-
 </head>
+<body style="margin:0; padding:0; background-color:#f4f4f6;">
+
+<!-- Texto de vista previa (se muestra en la bandeja de entrada) -->
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#f4f4f6;">
+    Tu código de recuperación de Astro Pollo App es {{ $codigo }}
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f6;">
+    <tr>
+        <td align="center" style="padding:32px 12px;">
+
+            <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+
+                <!-- Franja superior de marca -->
+                <tr>
+                    <td style="height:6px; line-height:6px; font-size:0; background-color:#c51818;">&nbsp;</td>
+                </tr>
+
+                <!-- Logo -->
+                <tr>
+                    <td align="center" style="padding:36px 24px 8px;">
+                        <img src="http://astropolloapp.com/storage/correoimg/image-4.png" width="120" alt="Astro Pollo" style="width:120px; max-width:120px; height:auto; border-radius:24px;">
+                    </td>
+                </tr>
+
+                <!-- Icono -->
+                <tr>
+                    <td align="center" class="px" style="padding:24px 48px 0;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td align="center" style="width:72px; height:72px; background-color:#c51818; border-radius:36px;">
+                                    <img src="http://astropolloapp.com/storage/correoimg/image-3.png" width="40" alt="" style="width:40px; height:auto; margin:16px auto;">
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Título -->
+                <tr>
+                    <td align="center" class="px" style="padding:20px 48px 0; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                        <h1 class="title" style="margin:0; font-size:28px; line-height:36px; font-weight:700; color:#1f1f29;">
+                            Recuperación de Contraseña
+                        </h1>
+                    </td>
+                </tr>
+
+                <!-- Cuerpo -->
+                <tr>
+                    <td class="px" style="padding:28px 48px 0; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:16px; line-height:26px; color:#4a4a57;">
+                        <p style="margin:0 0 16px;">Hola <strong style="color:#1f1f29;">{{ $usuario }}</strong>,</p>
+                        <p style="margin:0 0 16px;">
+                            Recibimos una solicitud para restablecer la contraseña de tu cuenta en
+                            <strong style="color:#1f1f29;">Astro Pollo App</strong>.
+                        </p>
+                        <p style="margin:0;">Ingresa el siguiente código en la aplicación para continuar:</p>
+                    </td>
+                </tr>
+
+                <!-- Código -->
+                <tr>
+                    <td align="center" class="px" style="padding:28px 48px 8px;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#fdf0f0; border:2px dashed #c51818; border-radius:12px;">
+                            <tr>
+                                <td align="center" class="code" style="padding:18px 36px; font-family:'Courier New', Courier, monospace; font-size:36px; line-height:44px; font-weight:700; letter-spacing:10px; color:#c51818;">
+                                    {{ $codigo }}
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Vigencia -->
+                <tr>
+                    <td align="center" class="px" style="padding:12px 48px 0; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; line-height:22px; color:#4a4a57;">
+                        &#9201;&nbsp; Este código vence en <strong>{{ $minutos ?? 10 }} minutos</strong> y solo puede usarse una vez.
+                    </td>
+                </tr>
+
+                <!-- Aviso de seguridad -->
+                <tr>
+                    <td align="center" class="px" style="padding:20px 48px 0;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fff6e5; border-left:4px solid #f5a623; border-radius:8px;">
+                            <tr>
+                                <td style="padding:14px 18px; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; line-height:22px; color:#7a5200;">
+                                    &#128274;&nbsp; No compartas este código con nadie. El equipo de Astro Pollo <strong>nunca</strong> te lo pedirá.
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Separador + nota -->
+                <tr>
+                    <td class="px" style="padding:32px 48px 40px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr><td style="border-top:1px solid #ececf0; font-size:0; line-height:0;">&nbsp;</td></tr>
+                            <tr>
+                                <td style="padding-top:24px; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; line-height:22px; color:#8a8a96;">
+                                    Si no solicitaste este código, puedes ignorar este mensaje con tranquilidad: tu contraseña actual
+                                    seguirá siendo la misma.
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td align="center" style="background-color:#c51818; padding:28px 24px;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td style="padding:0 8px;">
+                                    <a href="https://www.facebook.com/AstroPolloElSalvador" target="_blank" title="Facebook">
+                                        <img src="http://astropolloapp.com/storage/correoimg/image-2.png" width="32" alt="Facebook" style="width:32px; height:auto;">
+                                    </a>
+                                </td>
+                                <td style="padding:0 8px;">
+                                    <a href="https://www.instagram.com/astropollosv/" target="_blank" title="Instagram">
+                                        <img src="http://astropolloapp.com/storage/correoimg/image-1.png" width="32" alt="Instagram" style="width:32px; height:auto;">
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                        <p style="margin:16px 0 4px; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; font-weight:700; color:#ffffff;">
+                            Astro Pollo El Salvador
+                        </p>
+                        <p style="margin:0; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; line-height:18px; color:#fbd5d5;">
+                            Este es un correo automático, por favor no respondas a este mensaje.<br>
+                            &copy; {{ date('Y') }} Astro Pollo. Todos los derechos reservados.
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
 
-<body class="clean-body u_body" style="margin: 0;padding: 0;-webkit-text-size-adjust: 100%;background-color: #f9f9f9;color: #000000">
-<!--[if IE]><div class="ie-container"><![endif]-->
-<!--[if mso]><div class="mso-container"><![endif]-->
-<table id="u_body" style="border-collapse: collapse;table-layout: fixed;border-spacing: 0;mso-table-lspace: 0pt;mso-table-rspace: 0pt;vertical-align: top;min-width: 320px;Margin: 0 auto;background-color: #f9f9f9;width:100%" cellpadding="0" cellspacing="0">
-    <tbody>
-    <tr style="vertical-align: top">
-        <td style="word-break: break-word;border-collapse: collapse !important;vertical-align: top">
-            <!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="background-color: #f9f9f9;"><![endif]-->
-
-
-            <div class="u-row-container" style="padding: 0px;background-color: #f9f9f9">
-                <div class="u-row" style="Margin: 0 auto;min-width: 320px;max-width: 600px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: #f9f9f9;">
-                    <div style="border-collapse: collapse;display: table;width: 100%;height: 100%;background-color: transparent;">
-                        <!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px;background-color: #f9f9f9;" align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:600px;"><tr style="background-color: #f9f9f9;"><![endif]-->
-
-                        <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px;padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;" valign="top"><![endif]-->
-                        <div class="u-col u-col-100" style="max-width: 320px;min-width: 600px;display: table-cell;vertical-align: top;">
-                            <div style="height: 100%;width: 100% !important;">
-                                <!--[if (!mso)&(!IE)]><!--><div style="box-sizing: border-box; height: 100%; padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;"><!--<![endif]-->
-
-                                    <table style="font-family:'Lato',sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-                                        <tbody>
-                                        <tr>
-                                            <td style="overflow-wrap:break-word;word-break:break-word;padding:15px;font-family:'Lato',sans-serif;" align="left">
-
-                                                <table height="0px" align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;table-layout: fixed;border-spacing: 0;mso-table-lspace: 0pt;mso-table-rspace: 0pt;vertical-align: top;border-top: 1px solid #f9f9f9;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%">
-                                                    <tbody>
-                                                    <tr style="vertical-align: top">
-                                                        <td style="word-break: break-word;border-collapse: collapse !important;vertical-align: top;font-size: 0px;line-height: 0px;mso-line-height-rule: exactly;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%">
-                                                            <span>&#160;</span>
-                                                        </td>
-                                                    </tr>
-                                                    </tbody>
-                                                </table>
-
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <!--[if (!mso)&(!IE)]><!--></div><!--<![endif]-->
-                            </div>
-                        </div>
-                        <!--[if (mso)|(IE)]></td><![endif]-->
-                        <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="u-row-container" style="padding: 0px;background-color: transparent">
-                <div class="u-row" style="Margin: 0 auto;min-width: 320px;max-width: 600px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: #ffffff;">
-                    <div style="border-collapse: collapse;display: table;width: 100%;height: 100%;background-color: transparent;">
-                        <!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px;background-color: transparent;" align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:600px;"><tr style="background-color: #ffffff;"><![endif]-->
-
-                        <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px;padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;" valign="top"><![endif]-->
-                        <div class="u-col u-col-100" style="max-width: 320px;min-width: 600px;display: table-cell;vertical-align: top;">
-                            <div style="height: 100%;width: 100% !important;">
-                                <!--[if (!mso)&(!IE)]><!--><div style="box-sizing: border-box; height: 100%; padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;"><!--<![endif]-->
-
-                                    <table style="font-family:'Lato',sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-                                        <tbody>
-                                        <tr>
-                                            <td style="overflow-wrap:break-word;word-break:break-word;padding:25px 10px;font-family:'Lato',sans-serif;" align="left">
-
-                                                <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                                                    <tr>
-                                                        <td style="padding-right: 0px;padding-left: 0px;" align="center">
-
-                                                            <img align="center" border="0" src="http://astropolloapp.com/storage/correoimg/image-4.png" alt="Image" title="Image" style="outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;clear: both;display: inline-block !important;border: none;height: auto;float: none;width: 29%;max-width: 168.2px;" width="168.2"/>
-
-                                                        </td>
-                                                    </tr>
-                                                </table>
-
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <!--[if (!mso)&(!IE)]><!--></div><!--<![endif]-->
-                            </div>
-                        </div>
-                        <!--[if (mso)|(IE)]></td><![endif]-->
-                        <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="u-row-container" style="padding: 0px;background-color: transparent">
-                <div class="u-row" style="Margin: 0 auto;min-width: 320px;max-width: 600px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: #161a39;">
-                    <div style="border-collapse: collapse;display: table;width: 100%;height: 100%;background-color: transparent;">
-                        <!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px;background-color: transparent;" align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:600px;"><tr style="background-color: #161a39;"><![endif]-->
-
-                        <!--[if (mso)|(IE)]><td align="center" width="600" style="background-color: #c51818;width: 600px;padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;" valign="top"><![endif]-->
-                        <div class="u-col u-col-100" style="max-width: 320px;min-width: 600px;display: table-cell;vertical-align: top;">
-                            <div style="background-color: #c51818;height: 100%;width: 100% !important;">
-                                <!--[if (!mso)&(!IE)]><!--><div style="box-sizing: border-box; height: 100%; padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;"><!--<![endif]-->
-
-                                    <table style="font-family:'Lato',sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-                                        <tbody>
-                                        <tr>
-                                            <td style="overflow-wrap:break-word;word-break:break-word;padding:35px 10px 10px;font-family:'Lato',sans-serif;" align="left">
-
-                                                <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                                                    <tr>
-                                                        <td style="padding-right: 0px;padding-left: 0px;" align="center">
-
-                                                            <img align="center" border="0" src="http://astropolloapp.com/storage/correoimg/image-3.png" alt="Image" title="Image" style="outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;clear: both;display: inline-block !important;border: none;height: auto;float: none;width: 10%;max-width: 58px;" width="58"/>
-
-                                                        </td>
-                                                    </tr>
-                                                </table>
-
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <table style="font-family:'Lato',sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-                                        <tbody>
-                                        <tr>
-                                            <td style="overflow-wrap:break-word;word-break:break-word;padding:0px 10px 30px;font-family:'Lato',sans-serif;" align="left">
-
-                                                <div style="font-size: 14px; line-height: 140%; text-align: left; word-wrap: break-word;">
-                                                    <p style="font-size: 14px; line-height: 140%; text-align: center;"><span style="font-size: 28px; line-height: 39.2px; color: #ffffff; font-family: Lato, sans-serif;">Recuperación de Contraseña</span></p>
-                                                </div>
-
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <!--[if (!mso)&(!IE)]><!--></div><!--<![endif]-->
-                            </div>
-                        </div>
-                        <!--[if (mso)|(IE)]></td><![endif]-->
-                        <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="u-row-container" style="padding: 0px;background-color: transparent">
-                <div class="u-row" style="Margin: 0 auto;min-width: 320px;max-width: 600px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: #ffffff;">
-                    <div style="border-collapse: collapse;display: table;width: 100%;height: 100%;background-color: transparent;">
-                        <!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px;background-color: transparent;" align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:600px;"><tr style="background-color: #ffffff;"><![endif]-->
-
-                        <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px;padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;" valign="top"><![endif]-->
-                        <div class="u-col u-col-100" style="max-width: 320px;min-width: 600px;display: table-cell;vertical-align: top;">
-                            <div style="height: 100%;width: 100% !important;">
-                                <!--[if (!mso)&(!IE)]><!--><div style="box-sizing: border-box; height: 100%; padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;"><!--<![endif]-->
-
-                                    <table style="font-family:'Lato',sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-                                        <tbody>
-                                        <tr>
-                                            <td style="overflow-wrap:break-word;word-break:break-word;padding:40px 40px 30px;font-family:'Lato',sans-serif;" align="left">
-
-                                                <div style="font-size: 14px; line-height: 140%; text-align: left; word-wrap: break-word;">
-                                                    <p style="font-size: 14px; line-height: 140%;"><span style="font-size: 18px; line-height: 25.2px; color: #666666;">Hola  {{ $usuario }},</span></p>
-                                                    <p style="font-size: 14px; line-height: 140%;"> </p>
-                                                    <p style="font-size: 14px; line-height: 140%;"><span style="font-size: 18px; line-height: 25.2px; color: #666666;">Se ha solicitado un código de recuperación de contraseña en la aplicación Astro Pollo App. </span></p>
-                                                    <p style="font-size: 14px; line-height: 140%;"> </p>
-                                                    <p style="font-size: 14px; line-height: 140%;"><span style="font-size: 18px; line-height: 25.2px; color: #666666;">Su código de recuperación es:</span></p>
-                                                    <p style="font-size: 14px; line-height: 140%;"> </p>
-                                                    <p style="font-size: 14px; line-height: 140%; text-align: center;"><strong><span style="font-size: 18px; line-height: 25.2px; color: #666666;">{{ $codigo }}</span></strong></p>
-                                                    <p style="font-size: 14px; line-height: 140%;"> </p>
-                                                </div>
-
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <table style="font-family:'Lato',sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-                                        <tbody>
-                                        <tr>
-                                            <td style="overflow-wrap:break-word;word-break:break-word;padding:40px 40px 30px;font-family:'Lato',sans-serif;" align="left">
-
-                                                <div style="font-size: 14px; line-height: 140%; text-align: left; word-wrap: break-word;">
-                                                    <p style="font-size: 14px; line-height: 140%;"><span style="color: #888888; font-size: 14px; line-height: 19.6px;"><em><span style="font-size: 16px; line-height: 22.4px;">si usted no realizo esta solicitud, puede ignorar este mensaje y su contraseña no se vera afectada..</span></em></span><br /><span style="color: #888888; font-size: 14px; line-height: 19.6px;"><em><span style="font-size: 16px; line-height: 22.4px;"> </span></em></span></p>
-                                                </div>
-
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <!--[if (!mso)&(!IE)]><!--></div><!--<![endif]-->
-                            </div>
-                        </div>
-                        <!--[if (mso)|(IE)]></td><![endif]-->
-                        <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="u-row-container" style="padding: 0px;background-color: transparent">
-                <div class="u-row" style="Margin: 0 auto;min-width: 320px;max-width: 600px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: #18163a;">
-                    <div style="border-collapse: collapse;display: table;width: 100%;height: 100%;background-color: transparent;">
-                        <!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px;background-color: transparent;" align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:600px;"><tr style="background-color: #18163a;"><![endif]-->
-
-                        <!--[if (mso)|(IE)]><td align="center" width="300" style="background-color: #c51818;width: 300px;padding: 20px 20px 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;" valign="top"><![endif]-->
-                        <div class="u-col u-col-50" style="max-width: 320px;min-width: 300px;display: table-cell;vertical-align: top;">
-                            <div style="background-color: #c51818;height: 100%;width: 100% !important;">
-                                <!--[if (!mso)&(!IE)]><!--><div style="box-sizing: border-box; height: 100%; padding: 20px 20px 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;"><!--<![endif]-->
-
-                                    <!--[if (!mso)&(!IE)]><!--></div><!--<![endif]-->
-                            </div>
-                        </div>
-                        <!--[if (mso)|(IE)]></td><![endif]-->
-                        <!--[if (mso)|(IE)]><td align="center" width="300" style="background-color: #c51818;width: 300px;padding: 0px 0px 0px 20px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;" valign="top"><![endif]-->
-                        <div class="u-col u-col-50" style="max-width: 320px;min-width: 300px;display: table-cell;vertical-align: top;">
-                            <div style="background-color: #c51818;height: 100%;width: 100% !important;">
-                                <!--[if (!mso)&(!IE)]><!--><div style="box-sizing: border-box; height: 100%; padding: 0px 0px 0px 20px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;"><!--<![endif]-->
-
-                                    <table style="font-family:'Lato',sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-                                        <tbody>
-                                        <tr>
-                                            <td style="overflow-wrap:break-word;word-break:break-word;padding:25px 10px 10px;font-family:'Lato',sans-serif;" align="left">
-
-                                                <div align="left">
-                                                    <div style="display: table; max-width:93px;">
-                                                        <!--[if (mso)|(IE)]><table width="93" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-collapse:collapse;" align="left"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; mso-table-lspace: 0pt;mso-table-rspace: 0pt; width:93px;"><tr><![endif]-->
-
-
-                                                        <!--[if (mso)|(IE)]><td width="32" style="width:32px; padding-right: 15px;" valign="top"><![endif]-->
-                                                        <table align="left" border="0" cellspacing="0" cellpadding="0" width="32" height="32" style="width: 32px !important;height: 32px !important;display: inline-block;border-collapse: collapse;table-layout: fixed;border-spacing: 0;mso-table-lspace: 0pt;mso-table-rspace: 0pt;vertical-align: top;margin-right: 15px">
-                                                            <tbody><tr style="vertical-align: top"><td align="left" valign="middle" style="word-break: break-word;border-collapse: collapse !important;vertical-align: top">
-                                                                    <a href=" https://www.facebook.com/AstroPolloElSalvador" title="Facebook" target="_blank">
-                                                                        <img src="http://astropolloapp.com/storage/correoimg/image-2.png" alt="Facebook" title="Facebook" width="32" style="outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;clear: both;display: block !important;border: none;height: auto;float: none;max-width: 32px !important">
-                                                                    </a>
-                                                                </td></tr>
-                                                            </tbody></table>
-                                                        <!--[if (mso)|(IE)]></td><![endif]-->
-
-                                                        <!--[if (mso)|(IE)]><td width="32" style="width:32px; padding-right: 0px;" valign="top"><![endif]-->
-                                                        <table align="left" border="0" cellspacing="0" cellpadding="0" width="32" height="32" style="width: 32px !important;height: 32px !important;display: inline-block;border-collapse: collapse;table-layout: fixed;border-spacing: 0;mso-table-lspace: 0pt;mso-table-rspace: 0pt;vertical-align: top;margin-right: 0px">
-                                                            <tbody><tr style="vertical-align: top"><td align="left" valign="middle" style="word-break: break-word;border-collapse: collapse !important;vertical-align: top">
-                                                                    <a href="https://www.instagram.com/astropollosv/" title="Instagram" target="_blank">
-                                                                        <img src="http://astropolloapp.com/storage/correoimg/image-1.png" alt="Instagram" title="Instagram" width="32" style="outline: none;text-decoration: none;-ms-interpolation-mode: bicubic;clear: both;display: block !important;border: none;height: auto;float: none;max-width: 32px !important">
-                                                                    </a>
-                                                                </td></tr>
-                                                            </tbody></table>
-                                                        <!--[if (mso)|(IE)]></td><![endif]-->
-
-
-                                                        <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
-                                                    </div>
-                                                </div>
-
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <table style="font-family:'Lato',sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-                                        <tbody>
-                                        <tr>
-                                            <td style="overflow-wrap:break-word;word-break:break-word;padding:5px 10px 10px;font-family:'Lato',sans-serif;" align="left">
-
-                                                <div style="font-size: 14px; color: #000000; line-height: 140%; text-align: left; word-wrap: break-word;">
-                                                    <p style="line-height: 140%;"><span style="color: #fbeeb8; line-height: 19.6px;">Astro Pollo El Salvador</span></p>
-                                                </div>
-
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <!--[if (!mso)&(!IE)]><!--></div><!--<![endif]-->
-                            </div>
-                        </div>
-                        <!--[if (mso)|(IE)]></td><![endif]-->
-                        <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="u-row-container" style="padding: 0px;background-color: #f9f9f9">
-                <div class="u-row" style="Margin: 0 auto;min-width: 320px;max-width: 600px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: #1c103b;">
-                    <div style="border-collapse: collapse;display: table;width: 100%;height: 100%;background-color: transparent;">
-                        <!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px;background-color: #f9f9f9;" align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:600px;"><tr style="background-color: #1c103b;"><![endif]-->
-
-                        <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px;padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;" valign="top"><![endif]-->
-                        <div class="u-col u-col-100" style="max-width: 320px;min-width: 600px;display: table-cell;vertical-align: top;">
-                            <div style="height: 100%;width: 100% !important;">
-                                <!--[if (!mso)&(!IE)]><!--><div style="box-sizing: border-box; height: 100%; padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;"><!--<![endif]-->
-
-                                    <!--[if (!mso)&(!IE)]><!--></div><!--<![endif]-->
-                            </div>
-                        </div>
-                        <!--[if (mso)|(IE)]></td><![endif]-->
-                        <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="u-row-container" style="padding: 0px;background-color: transparent">
-                <div class="u-row" style="Margin: 0 auto;min-width: 320px;max-width: 600px;overflow-wrap: break-word;word-wrap: break-word;word-break: break-word;background-color: #f9f9f9;">
-                    <div style="border-collapse: collapse;display: table;width: 100%;height: 100%;background-color: transparent;">
-                        <!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0px;background-color: transparent;" align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:600px;"><tr style="background-color: #f9f9f9;"><![endif]-->
-
-                        <!--[if (mso)|(IE)]><td align="center" width="600" style="width: 600px;padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;" valign="top"><![endif]-->
-                        <div class="u-col u-col-100" style="max-width: 320px;min-width: 600px;display: table-cell;vertical-align: top;">
-                            <div style="height: 100%;width: 100% !important;">
-                                <!--[if (!mso)&(!IE)]><!--><div style="box-sizing: border-box; height: 100%; padding: 0px;border-top: 0px solid transparent;border-left: 0px solid transparent;border-right: 0px solid transparent;border-bottom: 0px solid transparent;"><!--<![endif]-->
-
-                                    <!--[if (!mso)&(!IE)]><!--></div><!--<![endif]-->
-                            </div>
-                        </div>
-                        <!--[if (mso)|(IE)]></td><![endif]-->
-                        <!--[if (mso)|(IE)]></tr></table></td></tr></table><![endif]-->
-                    </div>
-                </div>
-            </div>
-
-
-            <!--[if (mso)|(IE)]></td></tr></table><![endif]-->
         </td>
     </tr>
-    </tbody>
 </table>
-<!--[if mso]></div><![endif]-->
-<!--[if IE]></div><![endif]-->
-</body>
 
+</body>
 </html>

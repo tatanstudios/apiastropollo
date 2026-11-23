@@ -1,18 +1,14 @@
-@extends('backend.menus.superior')
+@extends('adminlte::page')
 
-@section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+@section('title', 'Todos los Permisos')
+
+@section('css')
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
+    <link href="{{ asset('css/responsive.bootstrap4.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
-    <link href="{{ asset('css/buttons_estilo.css') }}" rel="stylesheet">
 @stop
 
-<style>
-    table{
-        /*Ajustar tablas*/
-        table-layout:fixed;
-    }
-</style>
+@section('content')
 
 <div id="divcontenedor" style="display: none">
     <section class="content-header">
@@ -21,7 +17,10 @@
                 <h1>Todos los Permisos</h1>
             </div>
             <br>
-            <button type="button" style="font-weight: bold; background-color: #28a745; color: white !important;" onclick="modalAgregar()" class="button button-3d button-rounded button-pill button-small">
+            <button type="button" class="btn btn-default btn-sm" onclick="window.location.href='{{ route('admin.roles.index') }}'">
+                <i class="fas fa-arrow-left"></i> Volver
+            </button>
+            <button type="button" class="btn btn-success btn-sm" onclick="modalAgregar()">
                 <i class="fas fa-pencil-alt"></i>
                 Agregar Permiso
             </button>
@@ -80,7 +79,7 @@
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="button" style="font-weight: bold; background-color: #28a745; color: white !important;" class="button button-3d button-rounded button-pill button-small" onclick="agregarPermiso()">Agregar</button>
+                    <button type="button" class="btn btn-primary" onclick="agregarPermiso()">Agregar</button>
                 </div>
             </div>
         </div>
@@ -101,7 +100,7 @@
                             <div class="row">
                                 <div class="col-md-12">
 
-                                    <p>Esta acción eliminara el Permiso en "Todos los Roles."</p>
+                                    <p>Esta acción eliminará el permiso <b id="nombre-borrar"></b> de todos los roles.</p>
 
                                     <div class="form-group">
                                         <input type="hidden" id="idborrar">
@@ -114,18 +113,19 @@
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="button" style="font-weight: bold; background-color: #ff4351; color: white !important;" class="button button-3d button-rounded button-pill button-small" onclick="borrar()">Borrar</button>
+                    <button type="button" class="btn btn-danger" onclick="borrar()">Borrar</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+@stop
 
-@extends('backend.menus.footerjs')
-@section('archivos-js')
-
+@section('js')
     <script src="{{ asset('js/jquery.dataTables.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/dataTables.bootstrap4.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('js/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ asset('js/responsive.bootstrap4.min.js') }}"></script>
 
     <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/axios.min.js') }}" type="text/javascript"></script>
@@ -172,6 +172,7 @@
                 return;
             }
 
+            openLoading();
             var formData = new FormData();
             formData.append('nombre', nombre);
             formData.append('descripcion', descripcion);
@@ -202,8 +203,9 @@
 
 
         // se recibe el ID del permiso a eliminar
-        function modalBorrar(id){
+        function modalBorrar(id, nombre){
             $('#idborrar').val(id);
+            $('#nombre-borrar').text(nombre);
             $('#modalBorrar').modal('show');
         }
 
@@ -224,6 +226,8 @@
                     if(response.data.success === 1){
                         toastr.success('Permiso globalmente eliminado');
                         recargar();
+                    }else if(response.data.success === 2){
+                        toastr.error('Este permiso está protegido; sin él se pierde el acceso a Roles y Permisos');
                     }else{
                         toastr.error('Error al eliminar');
                     }
@@ -240,7 +244,4 @@
         }
 
     </script>
-
-
-
 @stop

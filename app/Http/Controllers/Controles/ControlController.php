@@ -17,25 +17,28 @@ class ControlController extends Controller
 
         $user = Auth::user();
 
-        // ADMINISTRADOR SISTEMA
-        if($user->hasRole('Admin')){
-            $ruta = 'admin.roles.index';
+        // pantalla inicial segun los permisos del usuario (no segun el nombre del rol),
+        // en orden de prioridad: la primera seccion que pueda ver
+        $inicio = [
+            'sidebar.ordenes' => 'index.ordenes',
+            'sidebar.zonas' => 'index.servicios.listado',
+            'sidebar.usuarios' => 'index.usuarios.restaurantes',
+            'sidebar.reportes' => 'index.reportes',
+            'sidebar.roles.y.permisos' => 'admin.roles.index',
+        ];
+
+        // no tiene ningun permiso de vista, redirigir a pantalla sin permisos
+        $ruta = 'no.permisos.index';
+
+        foreach($inicio as $permiso => $rutaPermiso){
+            if($user->can($permiso)){
+                $ruta = $rutaPermiso;
+                break;
+            }
         }
 
-        else if($user->hasRole('Editor')){
-            $ruta = 'index.ordenes.pendientes';
-        }
-
-        else if($user->hasRole('Colaborador')){
-            $ruta = 'index.callcenter.generarorden';
-        }
-
-        else{
-            // no tiene ningun permiso de vista, redirigir a pantalla sin permisos
-            $ruta = 'no.permisos.index';
-        }
-
-        return view('backend.index', compact( 'ruta', 'user'));
+        // el panel usa AdminLTE (config/adminlte.php): cada pantalla es una pagina completa
+        return redirect()->route($ruta);
     }
 
     // redirecciona a vista sin permisos

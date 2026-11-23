@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Igual que en Laravel 8: limite 'api' (definido en AppServiceProvider) en el grupo api
         $middleware->throttleApi();
 
+        // Rutas de las apps: identidad y propiedad tomadas del token de Sanctum
+        $middleware->alias([
+            'propio' => \App\Http\Middleware\ApiPropietario::class,
+        ]);
+
         // Invitados sin sesion -> login; usuarios autenticados en rutas 'guest' -> panel
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('admin.panel'));
@@ -27,6 +32,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // La API siempre responde JSON (las apps no mandan Accept: application/json).
+        // Sin token valido: 401 en JSON, nunca una redireccion al login del panel.
+        $exceptions->shouldRenderJsonWhen(fn ($request) => $request->is('api/*'));
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['success' => 401, 'mensaje' => 'Sesión no válida, inicie sesión de nuevo'], 401);
+            }
+        });
+
         $exceptions->dontFlash([
             'current_password',
             'password',

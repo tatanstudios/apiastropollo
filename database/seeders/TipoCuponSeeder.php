@@ -14,16 +14,9 @@ class TipoCuponSeeder extends Seeder
      */
     public function run()
     {
+        // solo existe el cupon de producto gratis
         TipoCupon::create([
             'nombre' => 'Producto Gratis',
-        ]);
-
-        TipoCupon::create([
-            'nombre' => 'Descuento Dinero',
-        ]);
-
-        TipoCupon::create([
-            'nombre' => 'Descuento Porcentaje',
         ]);
     }
 }

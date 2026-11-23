@@ -37,7 +37,8 @@ return [
     |
     */
 
-    'guard' => ['web'],
+    // la API solo acepta tokens: la sesion del panel no sirve para entrar a la API
+    'guard' => [],
 
     /*
     |--------------------------------------------------------------------------
@@ -50,6 +51,7 @@ return [
     |
     */
 
+    // los tokens no vencen: duran hasta que se revoquen (cambio de contrasena, bloqueo, etc.)
     'expiration' => null,
 
     /*

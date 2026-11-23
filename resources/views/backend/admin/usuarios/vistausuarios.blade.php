@@ -1,427 +1,250 @@
-@extends('backend.menus.superior')
+@extends('adminlte::page')
 
-@section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+@section('title', 'Usuarios de restaurante')
+
+@section('css')
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
+    <link href="{{ asset('css/responsive.bootstrap4.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
-    <link href="{{ asset('css/estiloToggle.css') }}" type="text/css" rel="stylesheet" />
-
 @stop
 
+@section('content')
 <section class="content-header">
     <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-12">
-                <h1>Usuarios para Restaurante</h1>
+        <div class="d-flex flex-wrap justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-0">Usuarios de restaurante</h1>
+                <p class="text-muted mb-0">Cuentas con las que cada restaurante entra a su app para recibir órdenes. Un restaurante puede tener varios usuarios y todos reciben las notificaciones.</p>
             </div>
-            <div style="margin-top:15px;">
-                <button type="button" onclick="abrirModalAgregar()" class="btn btn-success btn-sm">
-                    <i class="fas fa-pencil-alt"></i>
-                    Nuevo Usuario
+            <div class="mt-2">
+                <button type="button" onclick="abrirNuevo()" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus"></i> Nuevo Usuario
                 </button>
             </div>
         </div>
+        @if($sinUsuario->count())
+            <div class="alert alert-warning mt-3 mb-0 py-2">
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                Sin usuario activo (no pueden recibir órdenes en su app):
+                @foreach($sinUsuario as $s)
+                    <a href="#" class="alert-link ml-2" onclick="abrirNuevo({{ $s->id }}); return false;">
+                        {{ $s->nombre }} <i class="fas fa-plus-circle"></i>
+                    </a>
+                @endforeach
+            </div>
+        @endif
     </div>
 </section>
 
 <section class="content">
     <div class="container-fluid">
-        <div class="card card-info">
-            <div class="card-header">
-                <h3 class="card-title">Listado</h3>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-12">
-                    <div id="tablaDatatable">
-                    </div>
-                </div>
+        <div class="card card-primary card-outline">
+            <div class="card-body">
+                <div id="tablaDatatable"></div>
             </div>
         </div>
     </div>
 </section>
 
-
-<!-- modal nuevo -->
-<div class="modal fade" id="modalAgregar">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">Nuevo Usuario</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="formulario-nuevo">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-12">
-
-                                <div class="form-group">
-                                    <label>Solo es permitido 1 usuario por cada Restaurante</label>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Restaurante:</label>
-                                    <select class="form-control" id="select-servicio">
-                                        @foreach($servicios as $item)
-                                            <option value="{{$item->id}}">{{$item->nombre}}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-
-                                <div class="form-group">
-                                    <label>Usuario</label>
-                                    <input type="text" autocomplete="off" maxlength="20" class="form-control" id="usuario-nuevo">
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Contraseña</label>
-                                    <input type="text" autocomplete="off" maxlength="16" class="form-control" id="password-nuevo">
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Nombre del Usuario</label>
-                                    <input type="text" autocomplete="off" maxlength="100" class="form-control" id="nombre-nuevo">
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="nuevo()">Guardar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<!-- modal editar -->
-<div class="modal fade" id="modalEditar">
+<!-- crear / editar usuario -->
+<div class="modal fade" id="modalUsuario">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Editar Contraseña</h4>
+                <h4 class="modal-title" id="titulo-modal">Nuevo Usuario</h4>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form id="formulario-editar">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-12">
+                <form id="formulario" onsubmit="return false;" autocomplete="off">
+                    <input type="hidden" id="id-usuario">
 
-                                <div class="form-group">
-                                    <label>Usuario</label>
-                                    <input type="hidden" id="id-editar">
-                                    <input type="text" autocomplete="off" maxlength="100" class="form-control" id="usuario-editar">
-                                </div>
+                    <div class="form-group">
+                        <label for="servicio">Restaurante</label>
+                        <select class="form-control" id="servicio">
+                            <option value="">Seleccionar...</option>
+                            @foreach($servicios as $s)
+                                <option value="{{ $s->id }}">{{ $s->nombre }}</option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted" id="ayuda-servicio"></small>
+                    </div>
 
-                                <div class="form-group">
-                                    <label>Nombre</label>
-                                    <input type="text" autocomplete="off" maxlength="100" class="form-control" id="nombre-editar">
-                                </div>
+                    <div class="form-group">
+                        <label for="nombre">Nombre</label>
+                        <input type="text" maxlength="100" class="form-control" id="nombre" placeholder="Ej.: Sucursal Metapán">
+                    </div>
 
+                    <div class="form-group">
+                        <label for="usuario">Usuario</label>
+                        <input type="text" maxlength="20" class="form-control" id="usuario" autocomplete="off" placeholder="Ej.: Sucursal Metapan">
+                        <small class="text-muted">Con esto entra a la app del restaurante.</small>
+                    </div>
 
-                                <div class="form-group">
-                                    <label>Nueva Contraseña (Dejar en blanco sino se modificará)</label>
-                                    <input type="text" autocomplete="off" maxlength="16" class="form-control" id="password-editar">
-                                </div>
-
+                    <div class="form-group mb-0">
+                        <label for="password">Contraseña</label>
+                        <div class="input-group">
+                            <input type="password" maxlength="50" class="form-control" id="password" autocomplete="new-password">
+                            <div class="input-group-append">
+                                <button class="btn btn-default" type="button" onclick="verPassword()" title="Mostrar u ocultar">
+                                    <i class="far fa-eye" id="icono-password"></i>
+                                </button>
                             </div>
                         </div>
+                        <small class="text-muted" id="ayuda-password">Mínimo 4 caracteres.</small>
                     </div>
                 </form>
             </div>
             <div class="modal-footer justify-content-between">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="editar()">Actualizar</button>
+                <button type="button" class="btn btn-success" onclick="guardar()">Guardar</button>
             </div>
         </div>
     </div>
 </div>
+@stop
 
-
-
-@extends('backend.menus.footerjs')
-@section('archivos-js')
-
+@section('js')
     <script src="{{ asset('js/jquery.dataTables.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/dataTables.bootstrap4.js') }}" type="text/javascript"></script>
-
+    <script src="{{ asset('js/dataTables.responsive.min.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('js/responsive.bootstrap4.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/axios.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/alertaPersonalizada.js') }}"></script>
 
-    <script type="text/javascript">
-        $(document).ready(function(){
-            var ruta = "{{ URL::to('admin/restaurantes/usuario/tabla') }}";
-            $('#tablaDatatable').load(ruta);
+    <script>
+        $(function () {
+            recargar();
+
+            // viene de Restaurantes > "Sin usuario"
+            var nuevo = new URLSearchParams(location.search).get('nuevo');
+            if (nuevo) { abrirNuevo(Number(nuevo)); }
         });
 
-    </script>
-
-    <script>
-
-        function recargar(){
-            var ruta = "{{ URL::to('admin/restaurantes/usuario/tabla') }}";
-            $('#tablaDatatable').load(ruta);
+        function recargar() {
+            $('#tablaDatatable').load("{{ url('/admin/restaurantes/usuario/tabla') }}");
         }
 
-        // modal nuevo
-        function abrirModalAgregar(){
-            document.getElementById("formulario-nuevo").reset();
-            $('#modalAgregar').modal('show');
+        function verPassword() {
+            var campo = $('#password'), visible = campo.attr('type') === 'text';
+            campo.attr('type', visible ? 'password' : 'text');
+            $('#icono-password').toggleClass('fa-eye', visible).toggleClass('fa-eye-slash', !visible);
         }
 
-        // agregar
-        function nuevo(){
+        function limpiar() {
+            document.getElementById('formulario').reset();
+            $('#password').attr('type', 'password');
+            $('#icono-password').addClass('fa-eye').removeClass('fa-eye-slash');
+        }
 
-            var idservicio = document.getElementById('select-servicio').value;
-            var usuario = document.getElementById('usuario-nuevo').value;
-            var password = document.getElementById('password-nuevo').value;
-            var nombre = document.getElementById('nombre-nuevo').value;
+        function abrirNuevo(idServicio) {
+            limpiar();
+            $('#titulo-modal').text('Nuevo Usuario');
+            $('#id-usuario').val('');
+            $('#servicio').val(idServicio || '').prop('disabled', false);
+            $('#ayuda-servicio').text('Puede tener varios usuarios; cada uno entra con su propia cuenta.');
+            $('#ayuda-password').text('Mínimo 4 caracteres.');
+            $('#modalUsuario').modal({ backdrop: 'static', keyboard: false });
+        }
 
-            if(idservicio === ''){
-                toastr.error('Restaurante es requerida');
-                return;
-            }
-
-            if(usuario === ''){
-                toastr.error('Usuario es requerida');
-                return;
-            }
-
-            if(password === ''){
-                toastr.error('Contraseña es requerida');
-                return;
-            }
-
-            if(nombre === ''){
-                toastr.error('Nombre es requerida');
-                return;
-            }
-
-
+        function abrirEditar(id) {
             openLoading();
-
-            let formData = new FormData();
-            formData.append('idservicio', idservicio);
-            formData.append('usuario', usuario);
-            formData.append('password', password);
-            formData.append('nombre', nombre);
-
-            axios.post('/admin/restaurantes/usuario/nuevo', formData, {
-            })
-                .then((response) => {
+            axios.post('/admin/restaurantes/usuario/informacion', { id: id })
+                .then(function (response) {
                     closeLoading();
+                    if (response.data.success !== 1) { toastr.error('Usuario no encontrado'); return; }
 
-                    if(response.data.success === 1){
-
-                        Swal.fire({
-                            title: 'Error al Guardar',
-                            text: "Este Restaurante ya tiene asignado 1 usuario",
-                            icon: 'info',
-                            showCancelButton: false,
-                            confirmButtonColor: '#28a745',
-                            cancelButtonColor: '#d33',
-                            cancelButtonText: 'Cancelar',
-                            confirmButtonText: 'Aceptar'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-
-                            }
-                        })
-
-                    }
-
-                    else if(response.data.success === 2){
-
-                        Swal.fire({
-                            title: 'Error al Guardar',
-                            text: "El usuario ya esta registrado para un Restaurante, siempre se toma en cuenta los usuarios bloqueados",
-                            icon: 'info',
-                            showCancelButton: false,
-                            confirmButtonColor: '#28a745',
-                            cancelButtonColor: '#d33',
-                            cancelButtonText: 'Cancelar',
-                            confirmButtonText: 'Aceptar'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-
-                            }
-                        })
-
-                    }
-
-                    else if (response.data.success === 3) {
-                        $('#modalAgregar').modal('hide');
-                        toastr.success('Usuario registrado');
-                        recargar();
-                    }  else {
-                        toastr.error('Error al guardar');
-                    }
-
+                    var u = response.data.info;
+                    limpiar();
+                    $('#titulo-modal').text('Editar Usuario');
+                    $('#id-usuario').val(u.id);
+                    $('#servicio').val(u.id_servicios).prop('disabled', true);
+                    $('#ayuda-servicio').text('El restaurante no se cambia: crea otro usuario para otro restaurante.');
+                    $('#nombre').val(u.nombre);
+                    $('#usuario').val(u.usuario);
+                    $('#ayuda-password').text('Déjala vacía para no cambiarla. Si la cambias, se cierra la sesión en la app.');
+                    $('#modalUsuario').modal({ backdrop: 'static', keyboard: false });
                 })
-                .catch((error) => {
-                    toastr.error('Error del servidor');
+                .catch(function () {
                     closeLoading();
+                    toastr.error('Error del servidor');
                 });
         }
 
-        function borrarRegistro(id){
+        function guardar() {
+            var id = $('#id-usuario').val();
+            var datos = {
+                nombre: $('#nombre').val().trim(),
+                usuario: $('#usuario').val().trim(),
+                password: $('#password').val()
+            };
 
+            if (!id && !$('#servicio').val()) { toastr.error('Selecciona el restaurante'); return; }
+            if (!datos.nombre) { toastr.error('Escribe el nombre'); return; }
+            if (!datos.usuario) { toastr.error('Escribe el usuario'); return; }
+            if (!id && !datos.password) { toastr.error('Escribe la contraseña'); return; }
+            if (datos.password && datos.password.length < 4) { toastr.error('La contraseña debe tener al menos 4 caracteres'); return; }
+
+            var ruta = '/admin/restaurantes/usuario/nuevo';
+            if (id) { datos.id = id; ruta = '/admin/restaurantes/usuario/actualizar'; }
+            else { datos.idservicio = $('#servicio').val(); }
+
+            openLoading();
+            axios.post(ruta, datos)
+                .then(function (response) {
+                    closeLoading();
+                    var r = response.data;
+                    if (r.success === 1) {
+                        toastr.success(id ? (r.cerroSesion ? 'Usuario actualizado; se cerró su sesión en la app' : 'Usuario actualizado') : 'Usuario creado');
+                        $('#modalUsuario').modal('hide');
+                        // la alerta de restaurantes sin usuario cambia: recargar la pagina completa al crear
+                        if (!id) { location.href = location.pathname; } else { recargar(); }
+                    } else if (r.success === 0) {
+                        toastr.error(r.mensaje || 'Revisa los datos');
+                    } else {
+                        toastr.error('Error al guardar');
+                    }
+                })
+                .catch(function () {
+                    closeLoading();
+                    toastr.error('Error del servidor');
+                });
+        }
+
+        function cambiarBloqueo(id, bloquear, boton) {
+            var usuario = $(boton).data('nombre');
             Swal.fire({
-                title: 'Bloquear Usuario',
-                text: "Esto bloquea el usuario y no podrá iniciar sesión o iniciar ordenes",
-                icon: 'info',
+                title: bloquear ? '¿Bloquear a ' + usuario + '?' : '¿Desbloquear a ' + usuario + '?',
+                text: bloquear
+                    ? 'Se cierra su sesión, ya no podrá entrar a la app del restaurante y deja de recibir notificaciones.'
+                    : 'Podrá volver a entrar a la app del restaurante.',
+                icon: bloquear ? 'warning' : 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#d33',
-                cancelButtonText: 'Cancelar',
-                confirmButtonText: 'Bloquear'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    bloquear(id);
-                }
-            })
-
+                confirmButtonColor: bloquear ? '#d33' : '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: bloquear ? 'Sí, bloquear' : 'Sí, desbloquear',
+                cancelButtonText: 'Cancelar'
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+                openLoading();
+                axios.post('/admin/restaurantes/usuario/bloquear', { id: id, bloqueado: bloquear })
+                    .then(function (response) {
+                        closeLoading();
+                        if (response.data.success === 1) {
+                            toastr.success(bloquear ? 'Usuario bloqueado' : 'Usuario desbloqueado');
+                            location.href = location.pathname;
+                        } else {
+                            toastr.error(response.data.mensaje || 'Error al actualizar');
+                        }
+                    })
+                    .catch(function () {
+                        closeLoading();
+                        toastr.error('Error del servidor');
+                    });
+            });
         }
-
-        // editar
-        function bloquear(id){
-
-            openLoading();
-            var formData = new FormData();
-            formData.append('id', id);
-
-            axios.post('/admin/restaurantes/usuario/bloquear', formData, {
-            })
-                .then((response) => {
-                    closeLoading();
-                    if (response.data.success === 1) {
-                        toastr.success('Registro bloqueado');
-                        recargar();
-                    }
-                    else {
-                        toastr.error('Error al bloquear');
-                    }
-                })
-                .catch((error) => {
-                    closeLoading();
-                    toastr.error('Error de servidor');
-                });
-        }
-
-
-        function verInformacion(id){
-
-            document.getElementById("formulario-editar").reset();
-
-            openLoading();
-
-
-            axios.post('/admin/restaurantes/usuario/informacion', {
-                'id': id
-            })
-                .then((response) => {
-                    closeLoading()
-
-                    if (response.data.success === 1) {
-
-                        $('#id-editar').val(id);
-
-                        $('#nombre-editar').val(response.data.info.nombre);
-                        $('#usuario-editar').val(response.data.info.usuario);
-
-                        $('#modalEditar').modal('show');
-                    }
-
-                    else {
-                        toastr.error('Error al guardar');
-                    }
-                })
-                .catch((error) => {
-                    closeLoading();
-                    toastr.error('Error del servidor');
-                });
-
-        }
-
-        function editar() {
-            var id = document.getElementById('id-editar').value;
-            var password = document.getElementById('password-editar').value;
-            var nombre = document.getElementById('nombre-editar').value;
-            var usuario = document.getElementById('usuario-editar').value;
-
-
-            if(nombre === ''){
-                toastr.error('Nombre es requerido');
-                return;
-            }
-
-            if(usuario === ''){
-                toastr.error('Usuario es requerido');
-                return;
-            }
-
-
-            let formData = new FormData();
-            formData.append('id', id);
-            formData.append('password', password);
-            formData.append('nombre', nombre);
-            formData.append('usuario', usuario);
-
-            openLoading();
-
-            axios.post('/admin/restaurantes/usuario/actualizar', formData, {
-            })
-                .then((response) => {
-                    closeLoading()
-
-                    if(response.data.success === 1){
-
-                        Swal.fire({
-                            title: 'No Guardado',
-                            text: "El Usuario ya se encuentra registrado",
-                            icon: 'info',
-                            showCancelButton: false,
-                            confirmButtonColor: '#28a745',
-                            cancelButtonColor: '#d33',
-                            cancelButtonText: 'Cancelar',
-                            confirmButtonText: 'Aceptar'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-
-                            }
-                        })
-                    }
-
-                    else if (response.data.success === 2) {
-                        toastr.success('Registro actualizado');
-                        $('#modalEditar').modal('hide');
-
-                        recargar();
-                    }
-
-                    else {
-                        toastr.error('Error al guardar');
-                    }
-                })
-                .catch((error) => {
-                    closeLoading();
-                    toastr.error('Error del servidor');
-                });
-        }
-
     </script>
-
-@endsection
+@stop

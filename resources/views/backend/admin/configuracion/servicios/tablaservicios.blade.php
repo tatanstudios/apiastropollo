@@ -1,105 +1,112 @@
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <table id="tabla" class="table table-bordered table-striped">
-                            <thead>
-                            <tr>
-                                <th style="width: 10%">Nombre</th>
-                                <th style="width: 6%">Utiliza Cupón </th>
-                                <th style="width: 7%">Opciones</th>
-                            </tr>
-                            </thead>
-                            <tbody>
+<table id="tabla" class="table table-bordered table-striped table-hover" style="width: 100%">
+    <thead>
+    <tr>
+        <th>Restaurante</th>
+        <th style="width: 200px">Hoy</th>
+        <th>Zonas que atiende</th>
+        <th style="width: 170px">Usuario de la app</th>
+        <th style="width: 110px">Cupones</th>
+        <th style="width: 250px">Opciones</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach($servicios as $dato)
+        <tr>
+            <td data-order="{{ $dato->nombre }}">
+                <b>{{ $dato->nombre }}</b>
+            </td>
 
-                            @foreach($servicios as $dato)
+            <td data-order="{{ $dato->abierto_ahora && !$dato->cierre_hoy ? 0 : 1 }}">
+                @if($dato->cierre_hoy)
+                    <span class="badge bg-danger" title="Mensaje para el cliente: {{ $dato->cierre_hoy->mensaje }}">
+                        <i class="far fa-calendar-times"></i> Cerrado hoy por cierre programado
+                    </span>
+                @elseif($dato->cerrado_hoy)
+                    <span class="badge bg-secondary">No abre hoy</span>
+                @elseif($dato->abierto_ahora)
+                    <span class="badge bg-success">Abierto ahora</span>
+                @else
+                    <span class="badge bg-light border text-muted">Fuera de horario</span>
+                @endif
+                @if($dato->horario_hoy)
+                    <div class="small text-muted mt-1">{{ $dato->horario_hoy }}</div>
+                @endif
+            </td>
 
-                                <tr>
-                                    <td>{{ $dato->nombre }}</td>
+            <td data-order="{{ count($dato->zonas) }}">
+                @if(count($dato->zonas))
+                    <a href="{{ route('index.zonas.restaurante', $dato->id) }}" title="Ver y administrar sus zonas">
+                        {{ count($dato->zonas) }} {{ count($dato->zonas) === 1 ? 'zona' : 'zonas' }}
+                    </a>
+                    @if($dato->zonas_visibles < count($dato->zonas))
+                        <span class="badge badge-light border text-muted">{{ count($dato->zonas) - $dato->zonas_visibles }} ocultas</span>
+                    @endif
+                    @if($dato->zonas_cerradas)
+                        <span class="badge badge-light border text-danger">{{ $dato->zonas_cerradas }} cerradas</span>
+                    @endif
+                    <div class="small text-muted">{{ implode(', ', $dato->zonas) }}</div>
+                @else
+                    <span class="badge bg-warning">Sin zonas</span>
+                    <div class="small"><a href="{{ route('index.zonas.restaurante', $dato->id) }}">Crear su primera zona</a></div>
+                @endif
+            </td>
 
-                                    <td>
-                                        @if($dato->utiliza_cupon == 0)
-                                            <span class="badge bg-danger">No</span>
-                                        @else
-                                            <span class="badge bg-success">Si</span>
-                                        @endif
-                                    </td>
+            <td>
+                @if($dato->usuarios->count() === 1)
+                    {{ $dato->usuarios->first()->nombre }}
+                    <div class="small text-muted">{{ $dato->usuarios->first()->usuario }}</div>
+                @elseif($dato->usuarios->count() > 1)
+                    <a href="{{ route('index.usuarios.restaurantes') }}" title="{{ $dato->usuarios->pluck('nombre')->implode(', ') }}">{{ $dato->usuarios->count() }} usuarios</a>
+                    <div class="small text-muted text-truncate" style="max-width: 180px">{{ $dato->usuarios->pluck('nombre')->implode(', ') }}</div>
+                @else
+                    <span class="badge bg-warning">Sin usuario</span>
+                    <div class="small"><a href="{{ route('index.usuarios.restaurantes', ['nuevo' => $dato->id]) }}">Crear usuario</a></div>
+                @endif
+            </td>
 
-                                    <td>
-                                        <button type="button" class="btn btn-primary btn-xs" onclick="informacionServicio({{ $dato->id }})">
-                                            <i class="fas fa-eye" title="Editar"></i>&nbsp; Editar
-                                        </button>
+            <td data-order="{{ $dato->utiliza_cupon }}">
+                @if($dato->utiliza_cupon == 1)
+                    <span class="badge bg-success">Acepta</span>
+                @else
+                    <span class="badge bg-secondary">No acepta</span>
+                @endif
+                @if($dato->cupones)
+                    <div class="small mt-1">
+                        <a href="{{ route('index.cupones.listado') }}">{{ $dato->cupones }} {{ $dato->cupones === 1 ? 'cupón activo' : 'cupones activos' }}</a>
+                    </div>
+                @endif
+            </td>
 
-                                        <br><br>
-
-                                        <button type="button" class="btn btn-success btn-xs" onclick="modalHorario({{ $dato->id }})">
-                                            <i class="fas fa-eye" title="Horarios"></i>&nbsp; Horarios
-                                        </button>
-                                        <br><br>
-
-                                        <button type="button" class="btn btn-primary btn-xs" onclick="abrirModalOpciones({{ $dato->id }})">
-                                            <i class="fas fa-eye" title="Opciones"></i>&nbsp; Opciones
-                                        </button>
-
-
-                                    </td>
-                                </tr>
-
-                            @endforeach
-
-
-                            </tbody>
-                        </table>
+            <td>
+                <button type="button" class="btn btn-primary btn-xs" onclick="abrirEditar({{ $dato->id }})">
+                    <i class="fas fa-pencil-alt"></i>&nbsp; Editar
+                </button>
+                <a href="{{ route('index.zonas.restaurante', $dato->id) }}" class="btn btn-success btn-xs">
+                    <i class="fas fa-map-marked-alt"></i>&nbsp; Zonas
+                </a>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                        <i class="fas fa-utensils"></i>&nbsp; Menú y promociones
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" href="{{ url('/admin/categorias/listado/' . $dato->id) }}"><i class="fas fa-list fa-fw mr-1"></i> Categorías y productos</a>
+                        <a class="dropdown-item" href="{{ url('/admin/slider/listado/' . $dato->id) }}"><i class="far fa-images fa-fw mr-1"></i> Slider</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ url('/admin/productos/servicio/principales/' . $dato->id) }}"><i class="fas fa-fire fa-fw mr-1"></i> Productos populares</a>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</section>
+            </td>
+        </tr>
+    @endforeach
+    </tbody>
+</table>
 
+@include('backend.partials.datatable_es')
 <script>
     $(function () {
-        $("#tabla").DataTable({
-            "paging": true,
-            "lengthChange": true,
-            "searching": true,
-            "ordering": true,
-            "info": true,
-            "autoWidth": false,
-            "pagingType": "full_numbers",
-            "lengthMenu": [[10, 25, 50, 100, 150, -1], [10, 25, 50, 100, 150, "Todo"]],
-            "language": {
-
-                "sProcessing": "Procesando...",
-                "sLengthMenu": "Mostrar _MENU_ registros",
-                "sZeroRecords": "No se encontraron resultados",
-                "sEmptyTable": "Ningún dato disponible en esta tabla",
-                "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-                "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-                "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
-                "sInfoPostFix": "",
-                "sSearch": "Buscar:",
-                "sUrl": "",
-                "sInfoThousands": ",",
-                "sLoadingRecords": "Cargando...",
-                "oPaginate": {
-                    "sFirst": "Primero",
-                    "sLast": "Último",
-                    "sNext": "Siguiente",
-                    "sPrevious": "Anterior"
-                },
-                "oAria": {
-                    "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
-                    "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-                }
-
-            },
-            "responsive": true, "lengthChange": true, "autoWidth": false,
+        iniciarTabla('#tabla', {
+            "order": [[0, 'asc']],
+            "columnDefs": [{ "orderable": false, "targets": [5] }]
         });
     });
-
-
 </script>
-

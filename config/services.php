@@ -30,4 +30,14 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // WhatsApp Cloud API (Meta): aviso al restaurante de orden nueva (App\Services\WhatsAppService)
+    'whatsapp' => [
+        'token' => env('WHATSAPP_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'version' => env('WHATSAPP_API_VERSION', 'v23.0'),
+        'plantilla_orden' => env('WHATSAPP_PLANTILLA_ORDEN', 'nueva_orden'),
+        'idioma' => env('WHATSAPP_IDIOMA', 'es'),
+        'codigo_pais' => env('WHATSAPP_CODIGO_PAIS', '503'),
+    ],
+
 ];

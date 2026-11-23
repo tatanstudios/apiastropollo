@@ -6,12 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Jobs\EnviarNotificacionRestaurante;
 use App\Models\Clientes;
 use App\Models\Cupones;
-use App\Models\MotoristasServicios;
 use App\Models\Ordenes;
 use App\Models\OrdenesDescripcion;
 use App\Models\OrdenesDirecciones;
-use App\Models\OrdenesMotoristas;
-use App\Models\OrdenesPremio;
 use App\Models\Productos;
 use App\Models\UsuariosServicios;
 use Carbon\Carbon;
@@ -60,14 +57,6 @@ class ApiOrdenesController extends Controller
 
                 if ($info->id_cupones != null) {
                     $haycupon = 1;
-
-                    // SI ESTO NO ESTA NULL, SIGNIFICA QUE SE APLICO CUPON DINERO O PORCENTAJE
-
-                    if ($info->total_cupon != null) {
-
-                        $totalAPagar = $info->total_cupon;
-
-                    }
                 }
 
                 $info->totalformat = '$' . number_format((float)$totalAPagar, 2, '.', ',');
@@ -80,14 +69,6 @@ class ApiOrdenesController extends Controller
                     $estado = "Orden Iniciada";
                 }
 
-                if ($info->estado_camino == 1) {
-                    $estado = "Orden en Camino";
-                }
-
-                if ($info->estado_entregada == 1) {
-                    $estado = "Orden Entregada";
-                }
-
                 // Si fue cancelada
 
                 if ($info->estado_cancelada == 1) {
@@ -97,22 +78,6 @@ class ApiOrdenesController extends Controller
 
                 $info->haycupon = $haycupon;
                 $info->estado = $estado;
-
-
-                // INFORMACION DE PREMIOS
-
-                $haypremio = 0;
-                $textopremio = "";
-
-                if($infoOrdenPremio = OrdenesPremio::where('id_ordenes', $info->id)->first()){
-                    // si se canjeo premio
-
-                    $haypremio = 1;
-                    $textopremio = $infoOrdenPremio->nombre;
-                }
-
-                $info->haypremio = $haypremio;
-                $info->textopremio = $textopremio;
             }
 
             return ['success' => 1, 'ordenes' => $orden];
@@ -161,44 +126,12 @@ class ApiOrdenesController extends Controller
                 //****************************************************
 
 
-                if ($info->estado_camino == 1) {
-
-                    $textoCamino = "Motorista en Camino";
-                    $fechaCamino = date("h:i A d-m-Y", strtotime($info->fecha_camino));
-                } else {
-
-                    $textoCamino = "";
-                    $fechaCamino = "";
-                }
-
-                $info->textocamino = $textoCamino;
-                $info->fechacamino = $fechaCamino;
-
-
-                if ($info->estado_cancelada == 1) { // motorista inicia la entrega
+                if ($info->estado_cancelada == 1) {
                     $info->fecha_cancelada = date("h:i A d-m-Y", strtotime($info->fecha_cancelada));
                 }
 
 
                 $info->nota_cancelada = "Nota: " . $info->nota_cancelada;
-
-
-
-                //**************************
-
-
-                if ($info->estado_entregada == 1) {
-
-                    $textoEntregada = "Orden Entregada";
-                    $fechaEntregada = date("h:i A d-m-Y", strtotime($info->fecha_entregada));
-                } else {
-
-                    $textoEntregada = "";
-                    $fechaEntregada = "";
-                }
-
-                $info->textoentregada = $textoEntregada;
-                $info->fechaentregada = $fechaEntregada;
 
             }
 
@@ -207,74 +140,6 @@ class ApiOrdenesController extends Controller
             return ['success' => 2];
         }
 
-    }
-
-
-    public function verMotoristaOrden(Request $request)
-    {
-
-        // validaciones para los datos
-        $reglaDatos = array(
-            'ordenid' => 'required'
-        );
-
-        $validarDatos = Validator::make($request->all(), $reglaDatos);
-
-        if ($validarDatos->fails()) {
-            return ['success' => 0];
-        }
-
-        if ($infoMotoOrden = OrdenesMotoristas::where('id_ordenes', $request->ordenid)->first()) {
-
-            $infoMotorista = MotoristasServicios::where('id', $infoMotoOrden->id_motorista)->first();
-
-            $foto = $infoMotorista->imagen;
-            $nombre = $infoMotorista->nombre;
-            $vehiculo = $infoMotorista->vehiculo;
-            $placa = $infoMotorista->placa;
-
-            return ['success' => 1, 'foto' => $foto, 'nombre' => $nombre, 'vehiculo' => $vehiculo, 'placa' => $placa];
-        } else {
-            // motorista no encontrado
-            return ['success' => 2];
-        }
-    }
-
-
-
-    public function calificarLaOrden(Request $request){
-
-        $reglaDatos = array(
-            'ordenid' => 'required',
-            'valor' => 'required'
-        );
-
-        /// mensaje
-
-        $validarDatos = Validator::make($request->all(), $reglaDatos);
-
-        if($validarDatos->fails()){return ['success' => 0]; }
-
-        if(OrdenesMotoristas::where('id_ordenes', $request->ordenid)->first()){
-
-            OrdenesMotoristas::where('id_ordenes', $request->ordenid)
-                ->update(['experiencia' => $request->valor,
-                    'mensaje' => $request->mensaje]);
-
-
-            // QUITAR VISIBILIDAD A LAS LISTAS DE ORDENES AL CLIENTE
-
-
-            Ordenes::where('id', $request->ordenid)
-                ->update(['visible' => 0]);
-
-
-            $titulo = "Orden Calificada";
-            $mensaje = "Muchas Gracias";
-            return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
-        }else{
-            return ['success' => 99];
-        }
     }
 
 
@@ -321,7 +186,13 @@ class ApiOrdenesController extends Controller
 
             $lista = OrdenesDescripcion::where('id_ordenes', $infoOrden->id)->get();
 
+            // opciones elegidas (copiadas al ordenar): [idOrdenDescripcion => ['texto' => [...], 'extra' => x]]
+            $opcionesOrden = \App\Services\Modificadores::deOrden($lista->pluck('id')->all());
+
             foreach ($lista as $info){
+
+                // ej. ["Elegir sabor: Naranja"]; el precio guardado ya incluye las opciones
+                $info->opciones = $opcionesOrden[$info->id]['texto'] ?? [];
 
                 $infoProducto = Productos::where('id', $info->id_producto)->first();
                 $info->nombreproducto = $infoProducto->nombre;
@@ -358,7 +229,13 @@ class ApiOrdenesController extends Controller
 
             $lista = OrdenesDescripcion::where('id', $infoOrdenDescr->id)->get();
 
+            // opciones elegidas (copiadas al ordenar): [idOrdenDescripcion => ['texto' => [...], 'extra' => x]]
+            $opcionesOrden = \App\Services\Modificadores::deOrden($lista->pluck('id')->all());
+
             foreach ($lista as $info){
+
+                // ej. ["Elegir sabor: Naranja"]; el precio guardado ya incluye las opciones
+                $info->opciones = $opcionesOrden[$info->id]['texto'] ?? [];
 
                 $infoProducto = Productos::where('id', $info->id_producto)->first();
                 $info->nombreproducto = $infoProducto->nombre;
@@ -411,21 +288,6 @@ class ApiOrdenesController extends Controller
                         'visible' => 0,
                         'fecha_cancelada' => $fecha]);
 
-                    // SE DEVULVEN LOS PUNTOS DEL PREMIO SI CANCELO EL CLIENTE
-
-                    if($infoOrdenPremio = OrdenesPremio::where('id_ordenes', $infoOrden->id)->first()){
-
-                        $infoCliente = Clientes::where('id', $infoOrdenPremio->id_cliente)->first();
-
-                        // SUMAR LOS PUNTOS AL CLUENTE
-                        $suma = $infoCliente->puntos + $infoOrdenPremio->puntos;
-
-                        Clientes::where('id', $infoCliente->id)->update([
-                            'puntos' => $suma]);
-                    }
-
-
-
                     // SUBIR CONTADOR DE CUPON SI FUE UITILIZADO
 
                     // UTILIZO ESTE COPIA PORQUE SIEMPRE SE REGISTRA CUALQUIER CUPON INGRESADO
@@ -443,20 +305,13 @@ class ApiOrdenesController extends Controller
                     // NOTIFICACION A RESTAURANTE DE ORDEN CANCELADA
 
 
-                    if($infoUsuario = UsuariosServicios::where('id_servicios', $infoOrden->id_servicio)
-                        ->where('bloqueado', 0)
-                        ->first()){
+                    // a todos los usuarios activos del restaurante
+                    $tokensRestaurante = UsuariosServicios::idsActivos($infoOrden->id_servicio);
+                    if(!empty($tokensRestaurante)){
+                        $titulo = "Orden #" . $infoOrden->id . " Cancelada";
+                        $mensaje = "La orden fue cancelada por Cliente";
 
-
-                        if($infoUsuario->token_fcm != null){
-
-                            $titulo = "Orden #" . $infoOrden->id . " Cancelada";
-                            $mensaje = "La orden fue cancelada por Cliente";
-
-                            $tokenUsuario = $infoUsuario->token_fcm;
-
-                            dispatch(new EnviarNotificacionRestaurante($tokenUsuario, $titulo, $mensaje));
-                        }
+                        dispatch(new EnviarNotificacionRestaurante($tokensRestaurante, $titulo, $mensaje));
                     }
 
 
@@ -534,14 +389,6 @@ class ApiOrdenesController extends Controller
 
                 if ($info->id_cupones != null) {
                     $haycupon = 1;
-
-                    // SI ESTO NO ESTA NULL, SIGNIFICA QUE SE APLICO CUPON DINERO O PORCENTAJE
-
-                    if ($info->total_cupon != null) {
-
-                        $totalAPagar = $info->total_cupon;
-
-                    }
                 }
 
                 $info->totalformat = '$' . number_format((float)$totalAPagar, 2, '.', ',');
@@ -554,14 +401,6 @@ class ApiOrdenesController extends Controller
                     $estado = "Orden Iniciada";
                 }
 
-                if ($info->estado_camino == 1) {
-                    $estado = "Orden en Camino";
-                }
-
-                if ($info->estado_entregada == 1) {
-                    $estado = "Orden Entregada";
-                }
-
                 // Si fue cancelada
 
                 if ($info->estado_cancelada == 1) {
@@ -571,21 +410,6 @@ class ApiOrdenesController extends Controller
 
                 $info->haycupon = $haycupon;
                 $info->estado = $estado;
-
-
-
-                $haypremio = 0;
-                $textopremio = "";
-
-                if($infoOrdenPremio = OrdenesPremio::where('id_ordenes', $info->id)->first()){
-                    // si se canjeo premio
-
-                    $haypremio = 1;
-                    $textopremio = $infoOrdenPremio->nombre;
-                }
-
-                $info->haypremio = $haypremio;
-                $info->textopremio = $textopremio;
             }
 
             return ['success' => 1, 'hayordenes' => $conteo, 'ordenes' => $arrayOrdenes];

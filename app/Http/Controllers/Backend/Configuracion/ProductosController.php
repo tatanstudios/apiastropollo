@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Categorias;
 use App\Models\Productos;
 use App\Models\SubCategorias;
+use App\Services\Imagenes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -24,7 +25,15 @@ class ProductosController extends Controller
         $subcategoria = SubCategorias::where('id', $id)->first();
         $nomsubcategoria = $subcategoria->nombre;
 
-        return view('backend.admin.configuracion.productos.vistaproductos', compact('id', 'nomsubcategoria'));
+        // datos para la ruta Restaurante > Categoria > Sub categoria
+        $categoria = Categorias::where('id', $subcategoria->id_categorias)->first();
+        $idcategoria = $subcategoria->id_categorias;
+        $nomcategoria = optional($categoria)->nombre;
+        $idservicio = optional($categoria)->id_servicios;
+        $restaurante = \App\Models\Servicios::where('id', $idservicio)->value('nombre');
+
+        return view('backend.admin.configuracion.productos.vistaproductos',
+            compact('id', 'nomsubcategoria', 'idcategoria', 'nomcategoria', 'idservicio', 'restaurante'));
     }
 
 
@@ -32,6 +41,7 @@ class ProductosController extends Controller
     public function productosTabla($id){
 
         $productos = Productos::where('id_subcategorias', $id)
+            ->withCount(['modificadores AS total_modificadores'])
             ->orderBy('posicion')
             ->get();
 
@@ -55,6 +65,11 @@ class ProductosController extends Controller
 
         if ($validar->fails()){return ['success' => 0]; }
 
+        // imagen opcional: JPG/PNG real, peso maximo, y se guarda reducida
+        if($error = Imagenes::validar($request)){
+            return ['success' => 3, 'mensaje' => $error];
+        }
+
         if($info = Productos::where('id_subcategorias', $request->idsubcategoria)
             ->orderBy('posicion', 'DESC')->first()){
             $suma = $info->posicion + 1;
@@ -62,17 +77,13 @@ class ProductosController extends Controller
             $suma = 1;
         }
 
-        if($request->file('imagen')){
+        if($request->hasFile('imagen')){
 
-            $cadena = Str::random(15);
-            $tiempo = microtime();
-            $union = $cadena.$tiempo;
-            $nombre = str_replace(' ', '_', $union);
-
-            $extension = '.'.$request->imagen->getClientOriginalExtension();
-            $nombreFoto = $nombre.strtolower($extension);
-            $avatar = $request->file('imagen');
-            $upload = Storage::disk('imagenes')->put($nombreFoto, \File::get($avatar));
+            $nombreFoto = Imagenes::guardar($request->file('imagen'), Imagenes::LADO_PRODUCTO);
+            if(!$nombreFoto){
+                return ['success' => 3, 'mensaje' => Imagenes::mensajeError()];
+            }
+            $upload = true;
 
             if($upload){
                 $ca = new Productos();
@@ -155,17 +166,17 @@ class ProductosController extends Controller
 
         if($info = Productos::where('id', $request->id)->first()){
 
+            if($error = Imagenes::validar($request)){
+                return ['success' => 4, 'mensaje' => $error];
+            }
+
             if($request->hasFile('imagen')){
 
-                $cadena = Str::random(15);
-                $tiempo = microtime();
-                $union = $cadena.$tiempo;
-                $nombre = str_replace(' ', '_', $union);
-
-                $extension = '.'.$request->imagen->getClientOriginalExtension();
-                $nombreFoto = $nombre.strtolower($extension);
-                $avatar = $request->file('imagen');
-                $upload = Storage::disk('imagenes')->put($nombreFoto, \File::get($avatar));
+                $nombreFoto = Imagenes::guardar($request->file('imagen'), Imagenes::LADO_PRODUCTO);
+                if(!$nombreFoto){
+                    return ['success' => 4, 'mensaje' => Imagenes::mensajeError()];
+                }
+                $upload = true;
 
                 if($upload){
                     $imagenOld = $info->imagen;

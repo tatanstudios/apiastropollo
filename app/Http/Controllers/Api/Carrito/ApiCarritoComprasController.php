@@ -7,17 +7,14 @@ use App\Models\CarritoExtra;
 use App\Models\CarritoTemporal;
 use App\Models\Categorias;
 use App\Models\Clientes;
-use App\Models\ClientesPremios;
-use App\Models\CuponDescuentoDinero;
-use App\Models\CuponDescuentoPorcentaje;
 use App\Models\Cupones;
 use App\Models\CuponProductoGratis;
 use App\Models\DireccionCliente;
-use App\Models\Premios;
 use App\Models\Productos;
 use App\Models\Servicios;
 use App\Models\SubCategorias;
 use App\Models\Zonas;
+use App\Services\Modificadores;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -104,6 +101,13 @@ class ApiCarritoComprasController extends Controller
             }
 
 
+            // REGLA 6: opciones elegidas ("idOpcion:cantidad,...") segun los modificadores del producto
+            $modificadores = Modificadores::validar((int) $request->productoid, Modificadores::parsear($request->opciones));
+            if(!$modificadores['ok']){
+                DB::rollback();
+                return ['success' => 7, 'titulo' => 'Opciones', 'mensaje' => $modificadores['mensaje']];
+            }
+
             // verificar si cliente tiene carrito de compras sino solo agregar
 
             if($infoC = CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
@@ -129,6 +133,8 @@ class ApiCarritoComprasController extends Controller
                 $extra->nota_producto = $request->notaproducto;
                 $extra->save();
             }
+
+            Modificadores::guardarEnFila($extra->id, $modificadores['lineas']);
 
             DB::commit();
 
@@ -241,8 +247,23 @@ class ApiCarritoComprasController extends Controller
                         }
 
 
+                        // OPCIONES ELEGIDAS: deben seguir cumpliendo las reglas actuales del producto
+                        $validacion = Modificadores::validarFila((int) $pro->productoID, (int) $pro->carritoid);
+                        if(!$validacion['ok']){
+                            $estadoLocal = 1;
+                            $estadoProductoActivo = 0;
+                            $titulo = "Revisa las opciones";
+                            $mensaje = $validacion['mensaje'];
+                        }
+
+                        // precio por unidad = producto + opciones elegidas
+                        $precioUnidad = round((float) $pro->precio + $validacion['extra'], 2);
+                        $pro->opciones = Modificadores::texto($validacion['lineas']);
+                        $pro->preciobase = number_format((float) $pro->precio, 2, '.', ',');
+                        $pro->preciounitario = number_format($precioUnidad, 2, '.', ',');
+
                         // multiplicar cantidad por el precio de cada producto
-                        $precio = $pro->cantidad * $pro->precio;
+                        $precio = $pro->cantidad * $precioUnidad;
 
                         $subTotal = $subTotal + $precio;
 
@@ -304,6 +325,7 @@ class ApiCarritoComprasController extends Controller
         if($validarDatos->fails()){return ['success' => 0]; }
 
         if($carrito = CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
+            // las opciones elegidas (carrito_extra_opcion) se borran en cascada
             CarritoExtra::where('id_carrito_temporal', $carrito->id)->delete();
             CarritoTemporal::where('id_clientes', $request->clienteid)->delete();
 
@@ -377,9 +399,17 @@ class ApiCarritoComprasController extends Controller
                     ->where('c.id', $request->carritoid)
                     ->first();
 
+                // opciones del producto y lo que el cliente ya habia elegido
+                $seleccion = [];
+                foreach (Modificadores::seleccionDeFila((int) $request->carritoid) as $idOpcion => $cantidad) {
+                    $seleccion[] = ['id_opcion' => $idOpcion, 'cantidad' => $cantidad];
+                }
+
                 return [
                     'success' => 1,
                     'producto' => $producto,
+                    'modificadores' => Modificadores::grupos((int) $producto->productoID),
+                    'seleccion' => $seleccion,
                 ];
 
             }else{
@@ -409,10 +439,25 @@ class ApiCarritoComprasController extends Controller
         // verificar si existe el carrito
         if(CarritoTemporal::where('id_clientes', $request->clienteid)->first()){
             // verificar si existe el carrito extra id que manda el usuario
-            if(CarritoExtra::where('id', $request->carritoid)->first()){
+            if($fila = CarritoExtra::where('id', $request->carritoid)->first()){
 
-                CarritoExtra::where('id', $request->carritoid)->update(['cantidad' => $request->cantidad,
-                    'nota_producto' => $request->nota]);
+                // si la app manda opciones, se validan y reemplazan (versiones viejas no las mandan)
+                $lineas = null;
+                if($request->has('opciones')){
+                    $modificadores = Modificadores::validar((int) $fila->id_producto, Modificadores::parsear($request->opciones));
+                    if(!$modificadores['ok']){
+                        return ['success' => 3, 'titulo' => 'Opciones', 'mensaje' => $modificadores['mensaje']];
+                    }
+                    $lineas = $modificadores['lineas'];
+                }
+
+                DB::transaction(function () use ($fila, $request, $lineas) {
+                    CarritoExtra::where('id', $fila->id)->update(['cantidad' => $request->cantidad,
+                        'nota_producto' => $request->nota]);
+                    if($lineas !== null){
+                        Modificadores::guardarEnFila($fila->id, $lineas);
+                    }
+                });
 
                 return [
                     'success' => 1 // cantidad actualizada
@@ -459,17 +504,16 @@ class ApiCarritoComprasController extends Controller
                 // listado de productos del carrito
                 $producto = DB::table('productos AS p')
                     ->join('carrito_extra AS c', 'c.id_producto', '=', 'p.id')
-                    ->select('p.precio', 'c.cantidad')
+                    ->select('p.id AS productoID', 'c.id AS carritoid', 'p.precio', 'c.cantidad')
                     ->where('c.id_carrito_temporal', $cart->id)
                     ->get();
 
                 $subtotal = 0;
-                // multiplicar precio x cantidad
+                // multiplicar precio (producto + opciones elegidas) x cantidad
                 foreach($producto as $p){
 
-                    $cantidad = $p->cantidad;
-                    $precio = $p->precio;
-                    $multi = $cantidad * $precio;
+                    $extra = Modificadores::validarFila((int) $p->productoID, (int) $p->carritoid)['extra'];
+                    $multi = $p->cantidad * ((float) $p->precio + $extra);
                     $subtotal = $subtotal + $multi;
                 }
 
@@ -490,21 +534,6 @@ class ApiCarritoComprasController extends Controller
 
                 $infoServicios = Servicios::where('id', $cart->id_servicios)->first();
 
-                //** PREMIO */
-
-
-                $usapremio = 0;
-                $textopremio = "";
-
-                if($infoClientePremio = ClientesPremios::where('id_clientes', $request->clienteid)->first()){
-
-                    $usapremio = 1;
-
-                    $infoPremio = Premios::where('id', $infoClientePremio->id_premios)->first();
-
-                    $textopremio = "Se canjeara el Siguiente Premio: " . $infoPremio->nombre;
-                }
-
                 return [
                     'success' => 2,
                     'total' => $total,
@@ -512,9 +541,7 @@ class ApiCarritoComprasController extends Controller
                     'cliente' => $infoDireccion->nombre,
                     'minimo' => $boolMinimo,
                     'mensaje' => $msjMinimoConsumo,
-                    'usacupon' => $infoServicios->utiliza_cupon,
-                    'usapremio' => $usapremio,
-                    'textopremio' => $textopremio
+                    'usacupon' => $infoServicios->utiliza_cupon
                 ];
 
             }else{
@@ -537,11 +564,8 @@ class ApiCarritoComprasController extends Controller
 
         // RETORNOS
 
-        // 1: carrito de compras no encontrado
-        // 1: cupon no valido
-        // 2: cupon producto gratis
-        // 3: cupon descuento de dinero
-        // 4: cupon descuento de porcentaje
+        // 1: carrito de compras no encontrado o cupon no valido
+        // 2: cupon producto gratis (es el unico tipo de cupon)
 
 
         // verificar si usuario tiene carrito de compras
@@ -585,9 +609,7 @@ class ApiCarritoComprasController extends Controller
                     $subtotal = $subtotal + $multi;
                 }
 
-                // CONOCER QUE SERVICIO USA EL CUPON
-
-                // * PRODUCTO GRATIS
+                // SOLO EXISTE EL CUPON DE PRODUCTO GRATIS
 
                 if($infoCupon->id_tipo_cupon == 1){
 
@@ -606,70 +628,6 @@ class ApiCarritoComprasController extends Controller
                         $mensaje = "Cupón no válido";
                         return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
                     }
-                }
-
-                // DESCUENTO DE DINERO
-                else if($infoCupon->id_tipo_cupon == 2) {
-
-                    // VERIFICAR QUE EL SERVICIO DONDE ESTOY COMPRANDO ACEPTA ESTE CUPON
-                    if($infoCuponDescuentoDin = CuponDescuentoDinero::where('id_cupones', $infoCupon->id)
-                        ->where('id_servicios', $cart->id_servicios)
-                        ->first()){
-
-                        $resta = $subtotal - $infoCuponDescuentoDin->dinero;
-                        if($resta <= 0){
-                            $resta = 0;
-                        }
-
-                        $resta = '$' . number_format((float)$resta, 2, '.', '');
-
-                        $aplico = '$' . number_format((float)$infoCuponDescuentoDin->dinero, 2, '.', '');
-
-                        // * cupon valido para descuento de dinero
-                        $titulo = "Nota";
-                        $mensaje = "Cupón aplica descuento de " . $aplico . " \n Total a Cancelar " . $resta;
-                        return ['success' => 3, 'titulo' => $titulo, 'mensaje' => $mensaje, 'aplico' => $aplico, 'resta' => $resta];
-
-                    }else{
-                        $titulo = "Nota";
-                        $mensaje = "Cupón no válido";
-                        return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
-                    }
-
-                }
-
-                // DESCUENTO DE PORCENTAJE
-                else if($infoCupon->id_tipo_cupon == 3) {
-
-                    // VERIFICAR QUE EL SERVICIO DONDE ESTOY COMPRANDO ACEPTA ESTE CUPON
-                    if($infoCuponDescuentoPor = CuponDescuentoPorcentaje::where('id_cupones', $infoCupon->id)
-                        ->where('id_servicios', $cart->id_servicios)
-                        ->first()){
-
-                        $aplico = '%' . $infoCuponDescuentoPor->porcentaje;
-
-                        $resta = $subtotal * ($infoCuponDescuentoPor->porcentaje / 100);
-                        $final = $subtotal - $resta;
-
-                        if($final <= 0){
-                            $final = 0;
-                        }
-
-                        $final = '$' . number_format((float)$final, 2, '.', '');
-
-
-                        // * cupon valido para descuento de porcentaje
-                        $titulo = "Nota";
-                        $mensaje = "Cupón aplica descuento de " . $aplico;
-                        return ['success' => 4, 'titulo' => $titulo, 'mensaje' => $mensaje, 'aplico' => $aplico,
-                            'resta' => $final];
-
-                    }else{
-                        $titulo = "Nota";
-                        $mensaje = "Cupón no válido";
-                        return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
-                    }
-
                 }
 
                 // Cupon no encontrado
