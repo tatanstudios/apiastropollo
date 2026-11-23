@@ -1,24 +1,37 @@
-@extends('backend.menus.superior')
-@section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+@extends('adminlte::page')
+
+@section('title', 'Cupones')
+
+@section('css')
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
+    <link href="{{ asset('css/responsive.bootstrap4.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
-    <link href="{{ asset('css/estiloToggle.css') }}" type="text/css" rel="stylesheet" />
+    <style>
+        #tabla-premios td { vertical-align: middle; }
+        #tabla-premios tr.sin-premio .premio { visibility: hidden; }
+    </style>
 @stop
 
+@section('content')
 <section class="content-header">
     <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-12">
-                <h1>Lista de Cupones</h1>
+        <div class="d-flex flex-wrap justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <a href="{{ route('index.servicios.listado') }}" class="btn btn-default btn-sm mr-3">
+                    <i class="fas fa-arrow-left"></i> Restaurantes
+                </a>
+                <div>
+                    <h1 class="mb-0">Cupones</h1>
+                    <p class="text-muted mb-0">El cliente escribe el código al pagar y recibe el producto gratis del restaurante donde compra.</p>
+                </div>
             </div>
-            <div style="margin-top:15px; margin-left:15px">
-
-                <button type="button" onclick="modalNuevo()" class="btn btn-success btn-sm">
-                    <i class="fas fa-plus"></i>
-                    Nuevo Cupón
+            <div class="mt-2">
+                <button type="button" class="btn btn-default btn-sm" data-toggle="modal" data-target="#modalAyudaCupones">
+                    <i class="far fa-question-circle"></i> ¿Cómo funcionan?
                 </button>
-
+                <button type="button" onclick="abrirNuevo()" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus"></i> Nuevo Cupón
+                </button>
             </div>
         </div>
     </div>
@@ -26,418 +39,215 @@
 
 <section class="content">
     <div class="container-fluid">
-        <div class="card card-info">
-            <div class="card-header">
-                <h3 class="card-title">Listado de Cupones</h3>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-12">
-                    <div id="tablaDatatable">
-                    </div>
-                </div>
+        <div class="card card-primary card-outline">
+            <div class="card-body">
+                <div id="tablaDatatable"></div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- modal agregar -->
-<div class="modal fade" id="modalAgregar">
+@include('backend.admin.configuracion.cupones.parciales.ayuda_modal')
+
+<!-- crear / editar cupon -->
+<div class="modal fade" id="modalCupon">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Nuevo Cupón</h4>
+                <h4 class="modal-title" id="titulo-modal">Nuevo Cupón</h4>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form id="formulario-nuevo">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="col-md-12">
+                <input type="hidden" id="id-cupon">
 
-                                    <div class="form-group">
-                                        <label>Tipo Cupón:</label>
-                                        <select class="form-control" id="select-tipocupon">
-                                            @foreach($listaCupones as $item)
-                                                <option value="{{$item->id}}">{{$item->nombre}}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                <div class="row">
+                    <div class="col-md-5 form-group">
+                        <label for="nombre">Código</label>
+                        <input type="text" maxlength="50" class="form-control" id="nombre" autocomplete="off" placeholder="Ej.: NuevaApp">
+                        <small class="text-muted">Lo que escribe el cliente en la app.</small>
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="limite">Límite de usos</label>
+                        <input type="number" min="1" step="1" class="form-control" id="limite" placeholder="100">
+                        <small class="text-muted" id="texto-usado"></small>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label class="d-block">Estado
+                            <a href="#" data-toggle="modal" data-target="#modalAyudaCupones" title="¿Qué significa?"><i class="far fa-question-circle"></i></a>
+                        </label>
+                        <div class="custom-control custom-switch mt-2">
+                            <input type="checkbox" class="custom-control-input" id="activo">
+                            <label class="custom-control-label" for="activo">Activo</label>
+                        </div>
+                    </div>
+                </div>
 
-                                    <div class="form-group">
-                                        <label>Nombre del Cupón</label>
-                                        <input type="text" maxlength="50" autocomplete="off" class="form-control" id="nombre-nuevo" placeholder="Nombre del Cupón">
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Límite de usos</label>
-                                        <input type="number" class="form-control" id="limite-usos" placeholder="0">
-                                    </div>
-
+                <label>Dónde vale y qué regala</label>
+                <table class="table table-sm table-bordered mb-1" id="tabla-premios">
+                    <thead class="thead-light">
+                    <tr>
+                        <th style="width: 40%">Restaurante</th>
+                        <th>Producto gratis</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach($servicios as $s)
+                        <tr data-servicio="{{ $s->id }}" class="sin-premio">
+                            <td>
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input vale" id="vale-{{ $s->id }}" onchange="marcarRestaurante(this)">
+                                    <label class="custom-control-label" for="vale-{{ $s->id }}">{{ $s->nombre }}</label>
                                 </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </form>
+                                @if($s->utiliza_cupon != 1)
+                                    <small class="text-danger d-block">No acepta cupones: actívalo en Restaurantes → Editar.</small>
+                                @endif
+                            </td>
+                            <td>
+                                <input type="text" maxlength="100" class="form-control form-control-sm premio" placeholder="Ej.: 1 pieza gratis">
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+                <small class="text-muted">El límite de usos es uno solo para todos los restaurantes marcados.</small>
             </div>
             <div class="modal-footer justify-content-between">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-success" onclick="guardarCupon()">Guardar</button>
+                <button type="button" class="btn btn-success" onclick="guardar()">Guardar</button>
             </div>
         </div>
     </div>
 </div>
+@stop
 
-
-<!-- modal editar servicio-->
-<div class="modal fade" id="modalEditar">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">Editar servicio</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="formulario-editar">
-                    <div class="card-body">
-                        <div class="col-md-12">
-
-                            <div class="form-group">
-                                <label>Nombre del Cupón</label>
-                                <input type="hidden" id="id-editar">
-                                <input type="text" maxlength="50" autocomplete="off" class="form-control" id="nombre-editar" placeholder="Nombre del Cupón">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Límite de usos</label>
-                                <input type="number" class="form-control" id="limite-usos-editar" value="0">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Disponibilidad</label><br>
-                                <label class="switch" style="margin-top:10px">
-                                    <input type="checkbox" id="toggle-activo">
-                                    <div class="slider round">
-                                        <span class="on">Si</span>
-                                        <span class="off">No</span>
-                                    </div>
-                                </label>
-                            </div>
-
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-success" onclick="editarCupon()">Guardar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
-
-
-
-@extends('backend.menus.footerjs')
-@section('archivos-js')
-
+@section('js')
     <script src="{{ asset('js/jquery.dataTables.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/dataTables.bootstrap4.js') }}" type="text/javascript"></script>
-
+    <script src="{{ asset('js/dataTables.responsive.min.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('js/responsive.bootstrap4.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/axios.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/alertaPersonalizada.js') }}"></script>
 
-    <script type="text/javascript">
-        $(document).ready(function(){
-            var ruta = "{{ URL::to('admin/cupones/listado/tabla') }}";
-            $('#tablaDatatable').load(ruta);
-        });
-
-    </script>
-
     <script>
+        $(function () { recargar(); });
 
-        function recargar(){
-            var ruta = "{{ URL::to('admin/cupones/listado/tabla') }}";
-            $('#tablaDatatable').load(ruta);
+        function recargar() {
+            $('#tablaDatatable').load("{{ url('/admin/cupones/listado/tabla') }}");
         }
 
-        // abrir modal
-        function modalNuevo(){
-            document.getElementById("formulario-nuevo").reset();
-
-            $('#modalAgregar').modal({backdrop: 'static', keyboard: false})
+        function marcarRestaurante(casilla) {
+            var fila = $(casilla).closest('tr').toggleClass('sin-premio', !casilla.checked);
+            if (casilla.checked) { fila.find('.premio').focus(); }
         }
 
-        function guardarCupon(){
-            Swal.fire({
-                title: 'Guardar Cupón?',
-                text: "",
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#d33',
-                cancelButtonText: 'Cancelar',
-                confirmButtonText: 'Si'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    nuevoRegistro();
-                }
-            })
+        function ponerPremio(servicio, premio) {
+            var fila = $('#tabla-premios tr[data-servicio="' + servicio + '"]');
+            fila.find('.vale').prop('checked', premio !== null);
+            fila.find('.premio').val(premio || '');
+            fila.toggleClass('sin-premio', premio === null);
         }
 
-        //nuevo servicio
-        function nuevoRegistro(){
+        function limpiarPremios() {
+            $('#tabla-premios tbody tr').each(function () { ponerPremio($(this).data('servicio'), null); });
+        }
 
-            var tipocupon = document.getElementById('select-tipocupon').value;
-            var nombre = document.getElementById('nombre-nuevo').value;
-            var limite = document.getElementById('limite-usos').value;
+        function abrirNuevo() {
+            $('#titulo-modal').text('Nuevo Cupón');
+            $('#id-cupon').val('');
+            $('#nombre').val('');
+            $('#limite').val('');
+            $('#texto-usado').text('');
+            $('#activo').prop('checked', true);
+            limpiarPremios();
+            $('#modalCupon').modal({ backdrop: 'static', keyboard: false });
+        }
 
-
-            if (tipocupon === '') {
-                toastr.error("Tipo de Cupón es requerido");
-                return;
-            }
-
-            if (nombre === '') {
-                toastr.error("Nombre de Cupón es requerido");
-                return;
-            }
-
-            if(nombre.length > 50){
-                toastr.error("50 caracteres máximo para nombre");
-                return;
-            }
-
-
-            var reglaNumeroEntero = /^[0-9]\d*$/;
-
-            if(limite === ''){
-                toastr.error("Límite de usos es requerido");
-                return;
-            }
-
-            // validacion
-
-            if(!limite.match(reglaNumeroEntero)) {
-                toastr.error('Límite de usos es invalido');
-                return;
-            }
-            if(limite <= 0){
-                toastr.error('Límite de usos no puede ser cero o negativo')
-                return;
-            }
-
-            if(limite > 1000000){
-                toastr.error('Límite de usos no debe superar 1 millon')
-                return;
-            }
-
+        function abrirEditar(id) {
             openLoading();
-
-
-            var formData = new FormData();
-            formData.append('tipocupon', tipocupon);
-            formData.append('nombre', nombre);
-            formData.append('limite', limite);
-
-            axios.post('/admin/cupones/nuevo', formData, {
-            })
-                .then((response) => {
+            axios.post('/admin/cupones/informacion', { id: id })
+                .then(function (response) {
                     closeLoading();
+                    if (response.data.success !== 1) { toastr.error('Cupón no encontrado'); return; }
 
-                    if(response.data.success === 1){
-                        // CUPON YA REGISTRADO
+                    var c = response.data.cupon;
+                    $('#titulo-modal').text('Editar Cupón');
+                    $('#id-cupon').val(c.id);
+                    $('#nombre').val(c.texto_cupon);
+                    $('#limite').val(c.uso_limite);
+                    $('#texto-usado').text('Usado ' + c.contador + (c.contador == 1 ? ' vez' : ' veces'));
+                    $('#activo').prop('checked', c.activo == 1);
+                    limpiarPremios();
+                    $.each(response.data.premios, function (i, p) { ponerPremio(p.id_servicios, p.nombre); });
 
-                        Swal.fire({
-                            title: 'Cupón Repetido',
-                            text: "El nombre del cupón ya se encuentra registrado",
-                            icon: 'info',
-                            showCancelButton: false,
-                            confirmButtonColor: '#28a745',
-                            confirmButtonText: 'Aceptar',
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-
-                            }
-                        })
-                    }
-
-                    if(response.data.success === 2){
-
-                        $('#modalAgregar').modal('hide');
-                        toastr.success('Cupón registrado');
-                        recargar();
-
-                    }else{
-                        toastr.error('Error al guardar');
-                    }
-
+                    $('#modalCupon').modal({ backdrop: 'static', keyboard: false });
                 })
-                .catch((error) => {
-                    closeLoading();
-                    toastr.error('Error al guardar');
-                });
-        }
-
-
-        // vista editar servicio
-        function informacionCupon(id){
-
-            document.getElementById("formulario-editar").reset();
-            openLoading();
-
-            axios.post('/admin/cupones/informacion',{
-                'id': id
-            })
-                .then((response) => {
-                    closeLoading();
-
-                    if(response.data.success === 1){
-
-                        $('#modalEditar').modal('show');
-                        $('#id-editar').val(id);
-
-                        $('#nombre-editar').val(response.data.cupones.texto_cupon);
-                        $('#limite-usos-editar').val(response.data.cupones.uso_limite);
-
-                        if(response.data.cupones.activo === 0){
-                            $("#toggle-activo").prop("checked", false);
-                        }else{
-                            $("#toggle-activo").prop("checked", true);
-                        }
-
-                    }else{
-                        toastr.error('Error al buscar');
-                    }
-                })
-                .catch((error) => {
+                .catch(function () {
                     closeLoading();
                     toastr.error('Error del servidor');
                 });
         }
 
-        // abrir modales de opciones de servicio
-        function abrirModalOpciones(id){
+        function guardar() {
+            var id = $('#id-cupon').val();
+            var nombre = $('#nombre').val().trim();
+            var limite = $('#limite').val().trim();
 
-            document.getElementById("formulario-opciones").reset();
+            if (!nombre) { toastr.error('Escribe el código del cupón'); return; }
+            if (!/^\d+$/.test(limite) || Number(limite) < 1) { toastr.error('El límite de usos debe ser un número entero mayor que 0'); return; }
 
-            $('#id-opciones').val(id);
-            $('#modalOpcion').modal('show');
-        }
+            var premios = [], error = null;
+            $('#tabla-premios tbody tr').each(function () {
+                var fila = $(this);
+                if (!fila.find('.vale').prop('checked')) return;
+                var premio = fila.find('.premio').val().trim();
+                if (!premio) { error = error || 'Escribe qué regala ' + fila.find('label').text().trim(); }
+                premios.push({ servicio: fila.data('servicio'), premio: premio });
+            });
+            if (error) { toastr.error(error); return; }
 
-
-        // editar servicio
-        function editarCupon(){
-
-            var id = document.getElementById('id-editar').value;
-            var nombre = document.getElementById('nombre-editar').value;
-            var limite = document.getElementById('limite-usos-editar').value;
-
-            var cbactivo = document.getElementById('toggle-activo').checked;
-            var toggleActivo = cbactivo ? 1 : 0;
-
-
-            if (nombre === '') {
-                toastr.error("Nombre de Cupón es requerido");
-                return;
-            }
-
-            if(nombre.length > 50){
-                toastr.error("50 caracteres máximo para nombre");
-                return;
-            }
-
-
-            var reglaNumeroEntero = /^[0-9]\d*$/;
-
-            if(limite === ''){
-                toastr.error("Límite de usos es requerido");
-                return;
-            }
-
-            // validacion
-
-            if(!limite.match(reglaNumeroEntero)) {
-                toastr.error('Límite de usos es invalido');
-                return;
-            }
-
-            if(limite <= 0){
-                toastr.error('Límite de usos no puede ser cero o negativo')
-                return;
-            }
-
-            if(limite > 1000000){
-                toastr.error('Límite de usos no debe superar 1 millon')
-                return;
-            }
-
+            var datos = { nombre: nombre, limite: limite, activo: $('#activo').prop('checked') ? 1 : 0, premios: premios };
+            if (id) { datos.id = id; }
 
             openLoading();
-            var formData = new FormData();
-            formData.append('id', id);
-            formData.append('nombre', nombre);
-            formData.append('limite', limite);
-            formData.append('activo', toggleActivo);
-
-
-            axios.post('/admin/cupones/editar', formData, {
-            })
-                .then((response) => {
+            axios.post('/admin/cupones/guardar', datos)
+                .then(function (response) {
                     closeLoading();
-
-
-                    if(response.data.success === 1){
-                        // CUPON YA REGISTRADO
-
-                        Swal.fire({
-                            title: 'Cupón Repetido',
-                            text: "El nombre del cupón ya se encuentra registrado",
-                            icon: 'info',
-                            showCancelButton: false,
-                            confirmButtonColor: '#28a745',
-                            confirmButtonText: 'Aceptar',
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-
-                            }
-                        })
-                    }
-
-
-                    else if (response.data.success === 2) {
-                        toastr.success('Cupón actualizado');
-                        $('#modalEditar').modal('hide');
+                    var r = response.data;
+                    if (r.success === 1) {
+                        toastr.success(id ? 'Cupón actualizado' : 'Cupón creado');
+                        $('#modalCupon').modal('hide');
                         recargar();
-                    }
-                    else {
+                    } else if (r.success === 0) {
+                        toastr.error(r.mensaje || 'Revisa los datos');
+                    } else {
                         toastr.error('Error al guardar');
                     }
                 })
-                .catch((error) => {
+                .catch(function () {
                     closeLoading();
-                    toastr.error('Error de servidor');
+                    toastr.error('Error del servidor');
                 });
         }
 
-
-
-
-
-
+        function cambiarActivo(id, interruptor) {
+            axios.post('/admin/cupones/activo', { id: id, activo: interruptor.checked ? 1 : 0 })
+                .then(function (response) {
+                    if (response.data.success === 1) {
+                        toastr.success(interruptor.checked ? 'Cupón activado' : 'Cupón desactivado');
+                        recargar();
+                    } else {
+                        interruptor.checked = !interruptor.checked;
+                        toastr.error('Error al actualizar');
+                    }
+                })
+                .catch(function () {
+                    interruptor.checked = !interruptor.checked;
+                    toastr.error('Error del servidor');
+                });
+        }
     </script>
-
-@endsection
+@stop

@@ -39,20 +39,6 @@ class CreateOrdenesTable extends Migration
             $table->boolean('estado_iniciada');
             $table->dateTime('fecha_iniciada')->nullable();
 
-            // 0: NO PREPARADA   1: YA PREPARADA
-
-            $table->boolean('estado_preparada')->default(0);
-            $table->dateTime('fecha_preparada')->nullable();
-
-            // 0: ORDEN NO ENCAMINO   1: ORDEN YA EN CAMINO
-
-            $table->boolean('estado_camino')->default(0);
-            $table->dateTime('fecha_camino')->nullable();
-
-            // 0: ORDEN NO FINALIZA POR MOTORISTA  1: ORDEN FINALIZADA POR MOTORISTA
-
-            $table->boolean('estado_entregada')->default(0);
-            $table->dateTime('fecha_entregada')->nullable();
 
             // 0: NO CANCELADA   1: ORDEN CANCELADA
 
@@ -63,11 +49,9 @@ class CreateOrdenesTable extends Migration
 
 
             // DATOS DE CUPONES
-            // este guarda si cupon es de dinero o de porcentaje
+            // cupon de producto gratis aplicado
             $table->bigInteger('id_cupones')->unsigned()->nullable();
 
-            // lo que pagara cliente si aplico cupon dinero o porcentaje
-            $table->decimal('total_cupon')->nullable();
             // describiendo lo que se aplico
             $table->string('mensaje_cupon', 400)->nullable();
 

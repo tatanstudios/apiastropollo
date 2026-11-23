@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Backend\Configuracion;
 
 use App\Http\Controllers\Controller;
 use App\Models\Categorias;
-use App\Models\CategoriasPrincipales;
 use App\Models\Populares;
 use App\Models\Productos;
 use App\Models\SubCategorias;
+use App\Services\Imagenes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -23,7 +23,8 @@ class CategoriasController extends Controller
 
 
     public function index($id){
-        return view('backend.admin.configuracion.categorias.vistacategorias', compact('id'));
+        $restaurante = \App\Models\Servicios::where('id', $id)->value('nombre');
+        return view('backend.admin.configuracion.categorias.vistacategorias', compact('id', 'restaurante'));
     }
 
     // tabla lista categorias
@@ -50,22 +51,22 @@ class CategoriasController extends Controller
 
         if ($validar->fails()){return ['success' => 0]; }
 
+        // imagen: JPG/PNG real, peso maximo, y se guarda reducida
+        if($error = Imagenes::validar($request, true)){
+            return ['success' => 3, 'mensaje' => $error];
+        }
+
         if($info = Categorias::where('id_servicios', $request->id)->orderBy('posicion', 'DESC')->first()){
             $suma = $info->posicion + 1;
         }else{
             $suma = 1;
         }
 
-        $cadena = Str::random(15);
-        $tiempo = microtime();
-        $union = $cadena.$tiempo;
-        $nombre = str_replace(' ', '_', $union);
-
-        $extension = '.'.$request->imagen->getClientOriginalExtension();
-        $nombreFoto = $nombre.strtolower($extension);
-        $avatar = $request->file('imagen');
-        $upload = Storage::disk('imagenes')->put($nombreFoto, \File::get($avatar));
-
+        $nombreFoto = Imagenes::guardar($request->file('imagen'), Imagenes::LADO_CATEGORIA);
+        if(!$nombreFoto){
+            return ['success' => 3, 'mensaje' => Imagenes::mensajeError()];
+        }
+        $upload = true;
 
         if($upload){
             $ca = new Categorias();
@@ -120,17 +121,17 @@ class CategoriasController extends Controller
 
         if($infoCategoria = Categorias::where('id', $request->id)->first()){
 
+            if($error = Imagenes::validar($request)){
+                return ['success' => 3, 'mensaje' => $error];
+            }
+
             if($request->hasFile('imagen')){
 
-                $cadena = Str::random(15);
-                $tiempo = microtime();
-                $union = $cadena.$tiempo;
-                $nombre = str_replace(' ', '_', $union);
-
-                $extension = '.'.$request->imagen->getClientOriginalExtension();
-                $nombreFoto = $nombre.strtolower($extension);
-                $avatar = $request->file('imagen');
-                $upload = Storage::disk('imagenes')->put($nombreFoto, \File::get($avatar));
+                $nombreFoto = Imagenes::guardar($request->file('imagen'), Imagenes::LADO_CATEGORIA);
+                if(!$nombreFoto){
+                    return ['success' => 3, 'mensaje' => Imagenes::mensajeError()];
+                }
+                $upload = true;
 
                 if($upload){
                     $imagenOld = $infoCategoria->imagen;
@@ -212,14 +213,30 @@ class CategoriasController extends Controller
 
         $infoCategoria = Categorias::where('id', $id)->first();
         $nomcategoria = $infoCategoria->nombre;
+        $idservicio = $infoCategoria->id_servicios;
+        $restaurante = \App\Models\Servicios::where('id', $idservicio)->value('nombre');
 
-        return view('backend.admin.configuracion.categorias.subcategorias.vistasubcategorias', compact('id', 'nomcategoria'));
+        return view('backend.admin.configuracion.categorias.subcategorias.vistasubcategorias', compact('id', 'nomcategoria', 'idservicio', 'restaurante'));
     }
 
     // tabla lista categorias
     public function subCategoriasTabla($id){
 
         $lista = SubCategorias::where('id_categorias', $id)->orderBy('posicion')->get();
+
+        // conteo de productos por sub categoria (total y activos)
+        $conteos = Productos::whereIn('id_subcategorias', $lista->pluck('id'))
+            ->select('id_subcategorias',
+                DB::raw('COUNT(*) as total'),
+                DB::raw('SUM(CASE WHEN activo = 1 THEN 1 ELSE 0 END) as activos'))
+            ->groupBy('id_subcategorias')
+            ->get()
+            ->keyBy('id_subcategorias');
+
+        foreach ($lista as $info){
+            $info->total_productos = (int) optional($conteos->get($info->id))->total;
+            $info->productos_activos = (int) optional($conteos->get($info->id))->activos;
+        }
 
         return view('backend.admin.configuracion.categorias.subcategorias.tablasubcategorias', compact('lista'));
     }
@@ -334,154 +351,61 @@ class CategoriasController extends Controller
 
 
 
-    // ****************** CATEGORIAS PRINCIPALES DEL SERVICIO  **************************
-
-
-    public function indexServiciosCuponDescuentoDinero($id){
-
-        // viene id de servicio
-
-        $categorias = Categorias::where('id_servicios', $id)->orderBy('nombre')->get();
-        return view('backend.admin.configuracion.servicios.categoriaprincipales.vistacategoriasprincipales', compact('categorias', 'id'));
-    }
-
-    // tabla
-    public function tablaServiciosCuponDescuentoDinero($id){
-
-        $listado = CategoriasPrincipales::where('id_servicios', $id)
-        ->orderBy('posicion', 'ASC')
-            ->get();
-
-        foreach ($listado as $info){
-
-            $infoCategoria = Categorias::where('id', $info->id_categorias)->first();
-            $info->nomcategoria = $infoCategoria->nombre;
-        }
-
-        return view('backend.admin.configuracion.servicios.categoriaprincipales.tablacategoriasprincipales', compact('listado'));
-    }
-
-
-    public function nuevoCategoriaPrincipal(Request $request){
-
-        $regla = array(
-            'idservicio' => 'required',
-            'idcategoria' => 'required'
-        );
-
-        $validar = Validator::make($request->all(), $regla);
-
-        if ($validar->fails()){return ['success' => 0]; }
-
-
-        // YA CATEGORIA ESTA REGISTRADA
-        if(CategoriasPrincipales::where('id_servicios', $request->idservicio)
-            ->where('id_categorias', $request->idcategoria)
-            ->first()){
-            return ['success' => 1];
-        }
-
-        if($info = CategoriasPrincipales::where('id_servicios', $request->idservicio)
-            ->orderBy('posicion', 'DESC')
-            ->first()){
-            $suma = $info->posicion + 1;
-        }else{
-            $suma = 1;
-        }
-
-        $ca = new CategoriasPrincipales();
-        $ca->id_servicios = $request->idservicio;
-        $ca->id_categorias = $request->idcategoria;
-        $ca->posicion = $suma;
-
-        if($ca->save()){
-            return ['success' => 2];
-        }else {
-            return ['success' => 99];
-        }
-    }
-
-
-    public function borrarCategoriaPrincipal(Request $request){
-
-        $rules = array(
-            'id' => 'required' // id (zonas)
-        );
-        $validator = Validator::make($request->all(), $rules);
-
-        if($validator->fails()){ return ['success' => 0]; }
-
-        if(CategoriasPrincipales::where('id', $request->id)->first()){
-            CategoriasPrincipales::where('id', $request->id)->delete();
-        }
-
-        return ['success'=> 1];
-    }
-
-
-    public function ordenarCategoriaPrincipal(Request $request){
-
-        $tasks = CategoriasPrincipales::all();
-
-        foreach ($tasks as $task) {
-            $id = $task->id;
-
-            foreach ($request->order as $order) {
-                if ($order['id'] == $id) {
-                    $task->update(['posicion' => $order['posicion']]);
-                }
-            }
-        }
-        return ['success' => 1];
-    }
-
-
-
-
     // ******************** PRODUCTOS PRINCIPALES DEL SERVICIO /////
 
 
     public function indexServiciosProductosPrincipales($id){
 
-        $arrayCategorias = Categorias::where('id_servicios', $id)->get();
-        $pilaIdCategorias = array();
+        // productos del restaurante agrupados por "Categoría › Sub categoría" para el selector
+        $grupoProductos = DB::table('productos AS p')
+            ->join('sub_categorias AS s', 's.id', '=', 'p.id_subcategorias')
+            ->join('categorias AS c', 'c.id', '=', 's.id_categorias')
+            ->where('c.id_servicios', $id)
+            ->orderBy('c.posicion')->orderBy('s.posicion')->orderBy('p.posicion')
+            ->select('p.id', 'p.nombre', 'p.precio', 'p.activo', 'c.nombre AS categoria', 's.nombre AS subcategoria')
+            ->get()
+            ->groupBy(fn ($p) => $p->categoria . ' › ' . $p->subcategoria);
 
-        foreach ($arrayCategorias as $info){
-            array_push($pilaIdCategorias, $info->id);
-        }
+        $restaurante = \App\Models\Servicios::where('id', $id)->value('nombre');
 
-
-
-        // obtener todos los ID de sub categorias
-        $arraySubCate = SubCategorias::whereIn('id_categorias', $pilaIdCategorias)->get();
-
-        $pilaIdSubCategorias = array();
-
-        foreach ($arraySubCate as $info){
-            array_push($pilaIdSubCategorias, $info->id);
-        }
-
-        // obtener todos los productos de las sub categorias
-
-        $arrayProductos = Productos::whereIn('id_subcategorias', $pilaIdSubCategorias)->get();
-
-
-        return view('backend.admin.configuracion.servicios.productosprincipales.vistaproductosprincipales', compact('id', 'arrayProductos'));
+        return view('backend.admin.configuracion.servicios.productosprincipales.vistaproductosprincipales',
+            compact('id', 'grupoProductos', 'restaurante'));
     }
 
     public function tablaServiciosProductosPrincipales($id){
 
-        $listado = Populares::where('id_servicios', $id)->orderBy('posicion')->get();
+        $hora = \Carbon\Carbon::now('America/El_Salvador')->format('H:i:s');
+
+        // cada popular con su producto, sub categoria y categoria (leftJoin: el producto pudo borrarse)
+        $listado = DB::table('populares AS pop')
+            ->leftJoin('productos AS p', 'p.id', '=', 'pop.id_productos')
+            ->leftJoin('sub_categorias AS s', 's.id', '=', 'p.id_subcategorias')
+            ->leftJoin('categorias AS c', 'c.id', '=', 's.id_categorias')
+            ->where('pop.id_servicios', $id)
+            ->orderBy('pop.posicion')
+            ->select('pop.id', 'pop.id_productos', 'p.nombre', 'p.precio', 'p.imagen', 'p.activo AS producto_activo',
+                's.nombre AS subcategoria', 's.activo AS sub_activo',
+                'c.nombre AS categoria', 'c.activo AS cat_activo', 'c.usa_horario', 'c.hora_abre', 'c.hora_cierra')
+            ->get();
 
         foreach ($listado as $info){
+            $info->precio = '$' . number_format((float) $info->precio, 2, '.', ',');
 
-            $infoProducto = Productos::where('id', $info->id_productos)->first();
-
-            $info->nombre = $infoProducto->nombre;
-            $info->activo = $infoProducto->activo;
-            $info->precio = '$' . number_format((float)$infoProducto->precio, 2, '.', ',');
-            $info->imagen = $infoProducto->imagen;
-            $info->utiliza_imagen = $infoProducto->utiliza_imagen;
+            // por que no se ve en la app (mismas reglas que la API del menu); null = se ve
+            if ($info->nombre === null) {
+                $info->motivo = 'El producto fue borrado';
+            } elseif ($info->producto_activo == 0) {
+                $info->motivo = 'El producto está oculto';
+            } elseif ($info->sub_activo == 0) {
+                $info->motivo = 'La sub categoría «' . $info->subcategoria . '» está oculta';
+            } elseif ($info->cat_activo == 0) {
+                $info->motivo = 'La categoría «' . $info->categoria . '» está oculta';
+            } elseif ($info->usa_horario == 1 && ($hora < $info->hora_abre || $hora > $info->hora_cierra)) {
+                $info->motivo = 'Fuera del horario de «' . $info->categoria . '» ('
+                    . date('h:i A', strtotime($info->hora_abre)) . ' – ' . date('h:i A', strtotime($info->hora_cierra)) . ')';
+            } else {
+                $info->motivo = null;
+            }
         }
 
         return view('backend.admin.configuracion.servicios.productosprincipales.tablaproductosprincipales', compact('listado'));

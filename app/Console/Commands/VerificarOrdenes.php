@@ -6,98 +6,81 @@ use App\Jobs\EnviarNotificacionRestaurante;
 use App\Models\Informacion;
 use App\Models\Ordenes;
 use App\Models\Registros;
-use App\Models\Servicios;
 use App\Models\UsuariosServicios;
-use Illuminate\Console\Command;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use OneSignal;
 
-
+/**
+ * Recordatorio al restaurante de ordenes sin responder.
+ *
+ * Corre cada minuto (routes/console.php). Al guardar la orden ya se envia el primer aviso
+ * (Job NotificarNuevaOrden); si pasado 1 minuto el restaurante no la ha iniciado ni cancelado,
+ * se vuelve a avisar una vez por minuto, hasta MAX_RECORDATORIOS veces por orden (min 1, 2 y 3).
+ *
+ * En el servidor basta con un cron que ejecute el scheduler cada minuto:
+ *   * * * * * cd /ruta/del/proyecto && php artisan schedule:run >> /dev/null 2>&1
+ */
 class VerificarOrdenes extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'ordenes:verificar';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'notificacion cada 1 minuto a restaurante';
+    protected $description = 'Recuerda al restaurante (push) las ordenes sin responder: 1 vez por minuto, maximo 3 por orden';
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    private const MAX_RECORDATORIOS = 3;
+
+    private const ZONA = 'America/El_Salvador';
+
+    public function handle(): int
     {
-        parent::__construct();
-    }
+        $ahora = Carbon::now(self::ZONA);
 
-    /**
-     * Execute the console command.
-     *
-     * @return int
-     */
-    public function handle()
-    {
-
-        // ENVIO DE NOTIFICACION A RESTAURANTE CADA 1 MINUTO SI LA ORDEN
-        // NO HA SIDO INICIADA O CANCELADA
-
-        $infor = Informacion::where('id', 1)->first();
-
-        if($infor->crono_activo == 1){
-
-            $fecha = Carbon::now('America/El_Salvador');
-
+        // registro de que el cron esta corriendo (se activa desde el panel)
+        if (Informacion::where('id', 1)->value('crono_activo') == 1) {
             $registro = new Registros();
-            $registro->fecha = $fecha;
+            $registro->fecha = $ahora;
             $registro->save();
         }
 
-        $arrayOrdenHoy = Ordenes::where('estado_iniciada', 0)
+        // pendientes con al menos 1 minuto de creadas y que aun no llegan al limite.
+        // La ventana de 1 hora evita avisar de ordenes viejas olvidadas (ej. al desplegar).
+        $pendientes = Ordenes::where('estado_iniciada', 0)
             ->where('estado_cancelada', 0)
-            ->whereDate('fecha_orden', '=', Carbon::today('America/El_Salvador')->toDateString())
-            ->get();
+            ->where('conteo_notificacion', '<', self::MAX_RECORDATORIOS)
+            ->where('fecha_orden', '<=', $ahora->copy()->subMinute())
+            ->where('fecha_orden', '>=', $ahora->copy()->subHour())
+            ->orderBy('id')
+            ->get(['id', 'id_servicio']);
 
-        $pilaTokenRestaurante = array();
+        if ($pendientes->isEmpty()) {
+            return self::SUCCESS;
+        }
 
-        foreach ($arrayOrdenHoy as $orden) {
-            // Saltar si ya alcanzó el límite de notificaciones
-            if ($orden->conteo_notificacion >= 20) {
-                Log::info('Orden #' . $orden->id . ' superó el límite de notificaciones. Conteo actual: ' . $orden->conteo_notificacion);
+        // un solo aviso por restaurante, aunque tenga varias ordenes pendientes
+        foreach ($pendientes->groupBy('id_servicio') as $idServicio => $ordenes) {
+
+            // se cuenta el intento aunque el restaurante no tenga telefonos vinculados,
+            // asi nunca pasa del maximo
+            Ordenes::whereIn('id', $ordenes->pluck('id'))->increment('conteo_notificacion');
+
+            $idsUsuarios = UsuariosServicios::idsActivos($idServicio);
+            if (empty($idsUsuarios)) {
                 continue;
             }
 
-            // Obtener token del servicio asociado (primer usuario no bloqueado)
-            if ($infoUsuario = UsuariosServicios::where('id_servicios', $orden->id_servicio)
-                ->where('bloqueado', 0)
-                ->first()) {
-                array_push($pilaTokenRestaurante, $infoUsuario->token_fcm);
+            if ($ordenes->count() === 1) {
+                $titulo = 'Orden #' . $ordenes->first()->id . ' sin responder';
+                $mensaje = 'Revisar App';
+            } else {
+                $titulo = 'Tienes ' . $ordenes->count() . ' órdenes sin responder';
+                $mensaje = 'Órdenes #' . $ordenes->pluck('id')->implode(', #') . '. Revisar App';
             }
 
-            // Incrementar el conteo de notificaciones para esta orden
-            $orden->conteo_notificacion = $orden->conteo_notificacion + 1;
-            $orden->save();
+            dispatch(new EnviarNotificacionRestaurante($idsUsuarios, $titulo, $mensaje));
+
+            Log::info("Recordatorio a servicio $idServicio: ordenes " . $ordenes->pluck('id')->implode(','));
         }
 
-        if($pilaTokenRestaurante != null) {
-
-            $titulo = "Hay Nuevas Ordenes";
-            $mensaje = "Revisar las ordenes Pendientes";
-
-            Log::info('enviado desde Timer');
-
-            dispatch(new EnviarNotificacionRestaurante($pilaTokenRestaurante, $titulo, $mensaje));
-        }
-
-
+        return self::SUCCESS;
     }
 }

@@ -51,16 +51,32 @@ class ApiRegistroController extends Controller
         $usuario->password = Hash::make($request->password);
         $usuario->fecha = $fecha;
         $usuario->activo = 1;
-        $usuario->token_fcm = $request->token_fcm;
-        $usuario->appregistro = $request->version;
-        $usuario->puntos = 0;
+        // app nueva (externo = 1) usa external_id de OneSignal: no guarda token
+        $usuario->token_fcm = $request->externo == 1 ? null : $request->token_fcm;
+        $usuario->appregistro = self::versionConSistema($request->version, $request->userAgent());
 
         if($usuario->save()){
 
-            return ['success'=> 3, 'id'=> strval($usuario->id)];
+            // queda con la sesion iniciada: token de Sanctum sin vencimiento
+            $token = $usuario->createToken('app-cliente', ['cliente'])->plainTextToken;
+            return ['success'=> 3, 'id'=> strval($usuario->id), 'token' => $token];
 
         }else{
             return ['success' => 99];
         }
+    }
+
+    // las apps nuevas solo mandan "3.0.0": el sistema se saca del User-Agent
+    // (Android usa OkHttp; iOS usa NSURLSession, que manda CFNetwork/Darwin)
+    public static function versionConSistema(?string $version, ?string $agente): string
+    {
+        $version = trim((string) $version);
+        if (preg_match('/^(android|ios)\s/i', $version)) { return $version; }
+
+        $agente = (string) $agente;
+        if (preg_match('/CFNetwork|Darwin|iPhone|iPad|iOS/i', $agente)) { return 'ios ' . $version; }
+        if (preg_match('/okhttp|Android|Dalvik/i', $agente)) { return 'android ' . $version; }
+
+        return $version;
     }
 }

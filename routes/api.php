@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Registro\ApiRegistroController;
 use App\Http\Controllers\Api\Cliente\ApiClienteController;
@@ -10,371 +9,139 @@ use App\Http\Controllers\Api\Carrito\ApiCarritoComprasController;
 use App\Http\Controllers\Api\Procesar\ApiProcesarController;
 use App\Http\Controllers\Api\Ordenes\ApiOrdenesController;
 use App\Http\Controllers\Api\Ordenes\ApiOrdenesRestauranteController;
-use App\Http\Controllers\Api\Ordenes\ApiOrdenesMotoristaController;
-use App\Http\Controllers\Api\Premios\ApiPremiosController;
 
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| API de las apps (cliente y restaurante)
 |--------------------------------------------------------------------------
 |
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
+| Rutas publicas: login, registro, recuperacion de contrasena y modo invitado.
+| El resto exige un token de Sanctum (sin vencimiento) en el encabezado
+| "Authorization: Bearer <token>", entregado al iniciar sesion o registrarse.
+|
+| El middleware 'propio' (App\Http\Middleware\ApiPropietario):
+|   propio:cliente,clienteid   -> exige token de la app cliente y reemplaza "clienteid" por el id del token
+|   propio:restaurante,id      -> exige token de la app restaurante y reemplaza "id" por el id del token
+|   orden=id                   -> el campo "id" es una orden que debe ser del cliente
+| Ademas comprueba que ordenes, carrito, direcciones, categorias y productos sean del dueno del token.
 |
 */
 
-// registro del cliente
+
+// ============================== PUBLICAS ==============================
+
 Route::post('cliente/registro', [ApiRegistroController::class, 'registroCliente']);
-
-
-
 Route::post('cliente/login', [ApiClienteController::class, 'loginCliente']);
-Route::post('cliente/enviar/codigo-correo', [ApiClienteController::class, 'enviarCodigoCorreo']);
-Route::post('cliente/verificar/codigo-correo-password', [ApiClienteController::class, 'verificarCodigoCorreoPassword']);
-Route::post('cliente/actualizar/password', [ApiClienteController::class, 'actualizarPasswordClienteCorreo']);
-
-
-// DIRECCIONES DE CLIENTE
-Route::post('cliente/listado/direcciones', [ApiDireccionesController::class, 'listadoDeDirecciones']);
-Route::get('cliente/listado/zonas/poligonos', [ApiDireccionesController::class, 'puntosZonaPoligonos']);
-
-Route::post('cliente/nueva/direccion', [ApiDireccionesController::class, 'nuevaDireccionCliente']);
-
-
-// MENU PRINCIPAL
-Route::post('cliente/lista/servicios-bloque', [ApiMenuController::class, 'listadoMenuPrincipal']);
-
-// retorna lista de todas las categorias del servicio (filtro horario)
-Route::post('cliente/listado/todas/categorias', [ApiMenuController::class, 'listaDeTodasLasCategorias']);
-
-// retorna listado de productos cuando es seleccionada una categoria
-Route::post('cliente/listado/productos/servicios', [ApiMenuController::class, 'listaDeTodosLosProductosServicio']);
-
-// retorna informacion de 1 producto individual
-Route::post('cliente/informacion/producto/individual', [ApiMenuController::class, 'informacionProductoIndividual']);
-
-// agregar el producto al carrito de compras del cliente
-Route::post('cliente/carrito/producto/agregar', [ApiCarritoComprasController::class, 'agregarProductoCarritoTemporal']);
-
-// ver carrito de compras
-Route::post('cliente/carrito/ver/orden', [ApiCarritoComprasController::class, 'verCarritoDeCompras']);
-
-// borrar carrito de compras
-Route::post('cliente/carrito/borrar/orden', [ApiCarritoComprasController::class, 'borrarCarritoDeCompras']);
-
-// eliminar una fila del carrito de compras
-Route::post('cliente/carrito/eliminar/producto', [ApiCarritoComprasController::class, 'borrarProductoDelCarrito']);
-
-// ver producto individual en pantalla de editar la cantidad
-
-Route::post('cliente/carrito/ver/producto', [ApiCarritoComprasController::class, 'verProductoCarritoEditar']);
-
-// cambiar la cantidad de producto a editar en carrito de compras
-Route::post('cliente/carrito/cambiar/cantidad', [ApiCarritoComprasController::class, 'editarCantidadProducto']);
-
-// informacion final para procesar la orden
-Route::post('cliente/carrito/ver/proceso-orden', [ApiCarritoComprasController::class, 'verOrdenAProcesarCliente']);
-
-// ** verificacion de cupones **
-Route::post('cliente/verificar/cupon', [ApiCarritoComprasController::class, 'verificarCupon']);
-
-
-
-
-// ***********   ENVIO DE LA ORDEN DEL CLIENTE************
-
-Route::post('cliente/proceso/enviar/orden', [ApiProcesarController::class, 'enviarOrdenRestaurante']);
-
-// ENVIO NOTIFICACION DESPUES DE CONFIRMAR ORDEN
-// *** ONE SIGNAL -> enviar a lista de restaurantes
-Route::post('cliente/proceso/orden/notificacion', [ApiProcesarController::class, 'notificacionOrdenParaRestaurante']);
-
-
-// LISTADO DE ORDENES ACTIVAS DEL CLIENTE
-Route::post('cliente/ordenes/listado/activas', [ApiOrdenesController::class, 'verListadoOrdenesActivasCliente']);
-
-// VER ESTADO DE ORDEN INDIVIDUAL
-
-Route::post('cliente/orden/informacion/estado',  [ApiOrdenesController::class, 'informacionOrdenIndividual']);
-
-
-// ver motorista de la orden
-Route::post('cliente/orden/ver/motorista',  [ApiOrdenesController::class, 'verMotoristaOrden']);
-
-
-// calificar orden y completarla
-Route::post('cliente/orden/completar/calificacion',  [ApiOrdenesController::class, 'calificarLaOrden']);
-
-
-// listado de productos de una orden
-Route::post('cliente/listado/productos/ordenes',  [ApiOrdenesController::class, 'listadoProductosOrdenes']);
-
-// informacion de producto individual de una orden que se pidio
-Route::post('cliente/listado/productos/ordenes-individual',  [ApiOrdenesController::class, 'infoProductoOrdenadoIndividual']);
-
-
-// CANCELAR ORDEN POR EL CLIENTE
-// *** ONE SIGNAL -> notificacion a restaurantes
-Route::post('cliente/proceso/cancelar/orden', [ApiOrdenesController::class, 'cancelarOrdenPorCliente']);
-
-
-
-// HISTORIAL DE ORDENES POR EL CLIENTE
-Route::post('cliente/historial/listado/ordenes', [ApiOrdenesController::class, 'historialOrdenesCliente']);
-
-
-//  OCULTARME MI ORDEN PORQUE FUE CANCELADA
-Route::post('cliente/ocultar/mi/orden', [ApiOrdenesController::class, 'ocultameOrdenCliente']);
-
-
-
-
-
-
-
-
-// informacion del cliente
-Route::post('cliente/informacion/personal', [ApiClienteController::class, 'informacionCliente']);
-
-// actualizar correo del cliente
-Route::post('cliente/actualizar/correo', [ApiClienteController::class, 'actualizarCorreoCliente']);
-Route::post('cliente/actualizar/correo/v2', [ApiClienteController::class, 'actualizarCorreoClienteVersion2']);
-
-// informacion horario del restaurante segun direccion
-Route::post('cliente/informacion/restaurante/horario', [ApiClienteController::class, 'informacionHorarioRestaurante']);
-
-// actualizar contrasena del cliente
-Route::post('cliente/perfil/actualizar/contrasena', [ApiClienteController::class, 'actualizarPasswordClientePerfil']);
-
-// ver informacion si el cliente borrar carrito de compras al hacer una orden o no
-Route::post('cliente/opcion/perfil/carrito', [ApiClienteController::class, 'infoBorrarCarritoComprasCliente']);
-
-// guardar opcion si borrar carrito al hacer una orden o no
-Route::post('cliente/opcion/perfil/carrito/guardar', [ApiClienteController::class, 'actualizarOpcionCarritoCliente']);
-
-// elegir la direccion seleccionada por el cliente
-Route::post('cliente/direcciones/elegir/direccion', [ApiClienteController::class, 'seleccionarDireccionParaOrdenes']);
-
-// eliminar direccion seleccionada
-Route::post('cliente/eliminar/direccion/seleccionada', [ApiClienteController::class, 'eliminarDireccionSeleccionadaCliente']);
-
-
-// problema de aplicacion, el cliente puede enviar una nota
-Route::post('cliente/problema/aplicacion/nota', [ApiClienteController::class, 'notaProblemaAplicacion']);
-
-
-
-// informacion de un producto individual para modo testeo
-Route::post('cliente/info/producto/individual/modotesteo', [ApiMenuController::class, 'infoProductoIndividualModoTesteo']);
-
-// guardar productos en mi carrito para modo testeo
-Route::post('cliente/carrito/producto/agregar/modotesteo', [ApiMenuController::class, 'agregarProductoCarritoTemporalModoTesteo']);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// *** PREMIOS POR RESTAURANTE ***
-Route::post('cliente/premios/listado', [ApiPremiosController::class, 'listaPremiosPorRestaurante']);
-Route::post('cliente/premios/seleccionar', [ApiPremiosController::class, 'seleccionarPremio']);
-Route::post('cliente/premios/deseleccionar', [ApiPremiosController::class, 'deseleccionarPremio']);
-
-
-
-
-// *** ELIMINACION TOTAL DEL CLIENTE
-
-Route::post('cliente/eliminacion/total', [ApiClienteController::class, 'eliminacionTotalCliente']);
-
-
-
-
-// retorna listado de productos por servicio para el modo de testeo
-Route::post('cliente/listado/productos/testeo', [ApiMenuController::class, 'listadoProductosTesteo']);
-
-// lista de productos en carrito de compras para modo testeo
-
-Route::post('cliente/carrito/ver/orden/modotesteo', [ApiMenuController::class, 'verCarritoDeComprasModoTesteo']);
-
-// borrar producto de un modo testeo
-Route::post('cliente/carrito/eliminar/producto/modotesteo', [ApiMenuController::class, 'borrarProductoDelCarritoModoTesteo']);
-
-// informacion final de boton procesar orden
-Route::post('cliente/carrito/ver/procesoorden/modotesteo', [ApiMenuController::class, 'verOrdenAProcesarClienteModoTesteo']);
-
-// finalizar el modo testeo
-Route::post('cliente/finalizar/modotesteo', [ApiMenuController::class, 'finalizarModoTesteo']);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// *********************** RUTAS PARA APLICACION DE RESTAURANTES ****************************************
-
-
-
 Route::post('restaurante/login', [ApiClienteController::class, 'loginRestaurante']);
 
-// listado de ordenes nuevas, filtrado por restaurantes
-Route::post('restaurante/nuevas/ordenes', [ApiOrdenesRestauranteController::class, 'nuevasOrdenes']);
-
-// listado de productos de una orden
-Route::post('restaurante/listado/producto/orden', [ApiOrdenesRestauranteController::class, 'listadoProductosOrden']);
-
-// informacion de producto individual de una orden que se pidio
-Route::post('restaurante/listado/productos/ordenes-individual',  [ApiOrdenesRestauranteController::class, 'infoProductoOrdenadoIndividual']);
-
-// INICIAR ORDEN
-// **** ONE SIGNAL -> notificacion al cliente
-// **** ONE SIGNAL -> notificacion a motoristas
-
-Route::post('restaurante/proceso/orden/iniciar-orden',  [ApiOrdenesRestauranteController::class, 'iniciarOrdenPorRestaurante']);
-
-// CANCELAR ORDEN AL CLIENTE
-// NOTIFICACION ONE SIGNAL AL CLIENTE
-
-Route::post('restaurante/cancelar/orden', [ApiOrdenesRestauranteController::class, 'cancelarOrden']);
-
-// LISTADO DE ORDENES QUE YA ESTAN EN PREPARACION
-Route::post('restaurante/preparacion/ordenes', [ApiOrdenesRestauranteController::class, 'preparacionOrdenes']);
-
-
-// FINALIZAR ORDEN -> NOTIFICACION SIGNAL A MOTORISTA QUE TIENE LA ORDEN
-                   // O ENVIA NOTIFICACION A TODOS LOS MOTORISTAS PARA AGARRARLA
-// **** ONE SIGNAL X2
-Route::post('restaurante/proceso/orden/finalizar-orden',  [ApiOrdenesRestauranteController::class, 'finalizarOrdenPorRestaurante']);
-
-
-// LISTADO DE ORDENES QUE SE HAN COMPLETADO HOY
-Route::post('restaurante/completadashoy/ordenes', [ApiOrdenesRestauranteController::class, 'completadasHoyOrdenes']);
-
-
-// LISTADO DE ORDENES QUE SE HAN CANCELADO HOY
-Route::post('restaurante/canceladashoy/ordenes', [ApiOrdenesRestauranteController::class, 'canceladasHoyOrdenes']);
-
-
-// LISTADO DE CATEGORIAS DEL RESTAURANTE
-Route::post('restaurante/listado/categorias', [ApiOrdenesRestauranteController::class, 'listadoDeCategorias']);
-
-// ACTUALIZAR ESTADO DE CATEGORIA
-Route::post('restaurante/actualizar/estado/categorias', [ApiOrdenesRestauranteController::class, 'actualizarEstadoCategoria']);
-
-
-// LISTADO DE PRODUCTOS POR CATEGORIA DEL RESTAURANTE
-Route::post('restaurante/categoria/listado/productos', [ApiOrdenesRestauranteController::class, 'listadoDeProductosPorCategoria']);
-
-
-// ACTUALIZAR ESTADO DE PRODUCTO
-Route::post('restaurante/actualizar/estado/producto', [ApiOrdenesRestauranteController::class, 'actualizarEstadoProducto']);
-
-// HISTORIAL DE ORDENES DEL RESTAURANTES
-Route::post('restaurante/historial/ordenes', [ApiOrdenesRestauranteController::class, 'historialOrdenesRestaurantes']);
-
-
-// recibir una notificacion propia
-Route::post('restaurante/notificacion/modo/prueba', [ApiOrdenesRestauranteController::class, 'enviarNotificacionPropia']);
-
-
-
-
-
-
-
-
-
-
-
-// *********************** RUTAS PARA APLICACION DE MOTORISTAS ****************************************
-
-
-Route::post('motorista/login', [ApiClienteController::class, 'loginMotorista']);
-
-// NUEVAS ORDENES QUE EL RESTAURANTE YA INICIO PREPARACION Y NO ESTEN CANCELADAS O AGARRADAS
-Route::post('motorista/nuevas/ordenes', [ApiOrdenesMotoristaController::class, 'nuevasOrdenesMotorista']);
-
-// VER LISTADO DE PRODUCTOS
-Route::post('motorista/listado/producto/orden', [ApiOrdenesMotoristaController::class, 'listadoProductosOrden']);
-
-// SELECCIONAR LA ORDEN POR EL MOTORISTA
-Route::post('motorista/seleccionar/orden', [ApiOrdenesMotoristaController::class, 'seleccionarOrden']);
-
-// LISTADO DE ORDENES QUE ESTAN SELECCIONAS Y PENDIENTES DE INICIAR LA ENTREGA
-Route::post('motorista/pendientes/entrega/orden', [ApiOrdenesMotoristaController::class, 'pendientesEntregaOrden']);
-
-// AQUI SE INICIA LA ENTREGA DE LA ORDEN
-            // NOTIFICACION ONE SIGNAL A CLIENTE
-// *** ONE SIGNAL
-Route::post('motorista/iniciar/entrega/orden', [ApiOrdenesMotoristaController::class, 'iniciarEntregaOrden']);
-
-// LISTADO DE ORDENES QUE EL MOTORISTA ESTA ENTREGANDO
-Route::post('motorista/entregando/entrega/orden', [ApiOrdenesMotoristaController::class, 'listadoOrdenesEstoyEntregando']);
-
-// FINALIZAR ENTREGA POR PARTE DEL MOTORISTA
-            // NOTIFICACION ONE SIGNAL AL CLIENTE
-// *** ONE SIGNAL
-Route::post('motorista/finalizar/entrega/orden', [ApiOrdenesMotoristaController::class, 'finalizarOrden']);
-
-// LISTADO DE ORDENES COMPLETADAS HOY POR EL MOTORISTA
-Route::post('motorista/listado/completadas/hoy/orden', [ApiOrdenesMotoristaController::class, 'listadoCompletadasHoyMotorista']);
-
-
-// LISTADO DE ORDENES CANCELADAS HOY Y YA ESTABAN SELECCIONADAS POR EL MOTORISTA
-Route::post('motorista/listado/canceladas/hoy/orden', [ApiOrdenesMotoristaController::class, 'listadoCanceladasHoyMotorista']);
-
-
-// HISTORIAL DE ORDENES PARA MOTORISTAS
-Route::post('motorista/historial/ordenes', [ApiOrdenesMotoristaController::class, 'historialOrdenesMotoristas']);
-
-// INFORMACION SI RECIBE NOTIFICACIONES
-Route::post('motorista/opcion/notificacion', [ApiOrdenesMotoristaController::class, 'informacionNotificaciones']);
-
-// EDITAR ESTADO NOTIFICACIONES MOTORISTA
-Route::post('motorista/opcion/notificacion/editar', [ApiOrdenesMotoristaController::class, 'editarNotificaciones']);
-
-
-
-
-
-
-
-
-
-
-Route::post('cliente/prueba/notificaciones', [ApiOrdenesMotoristaController::class, 'enviarCorreoTest']);
-
-
-
-
+// recuperacion de contrasena: maximo 10 peticiones por minuto por IP
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('cliente/enviar/codigo-correo', [ApiClienteController::class, 'enviarCodigoCorreo']);
+    Route::post('cliente/verificar/codigo-correo-password', [ApiClienteController::class, 'verificarCodigoCorreoPassword']);
+    Route::post('cliente/actualizar/password', [ApiClienteController::class, 'actualizarPasswordClienteCorreo']);
+});
+
+// zonas de entrega (mapa) y modo invitado: sucursales y menu sin sesion
+Route::get('cliente/listado/zonas/poligonos', [ApiDireccionesController::class, 'puntosZonaPoligonos']);
+Route::get('cliente/invitado/sucursales', [ApiMenuController::class, 'listadoSucursalesInvitado']);
+Route::post('cliente/invitado/menu', [ApiMenuController::class, 'listadoMenuInvitado']);
+
+// productos del menu (solo lectura, id = categoria o producto): publicos para que el invitado
+// pueda ver el menu completo; agregar al carrito si pide sesion
+Route::post('cliente/listado/productos/servicios', [ApiMenuController::class, 'listaDeTodosLosProductosServicio']);
+Route::post('cliente/informacion/producto/individual', [ApiMenuController::class, 'informacionProductoIndividual']);
+
+
+// ============================== APP CLIENTE (token) ==============================
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // ---- rutas donde "id" es el cliente ----
+    Route::middleware('propio:cliente,id')->group(function () {
+        // direcciones
+        Route::post('cliente/listado/direcciones', [ApiDireccionesController::class, 'listadoDeDirecciones']);
+        Route::post('cliente/nueva/direccion', [ApiDireccionesController::class, 'nuevaDireccionCliente']);
+        Route::post('cliente/direcciones/elegir/direccion', [ApiClienteController::class, 'seleccionarDireccionParaOrdenes']);
+        Route::post('cliente/eliminar/direccion/seleccionada', [ApiClienteController::class, 'eliminarDireccionSeleccionadaCliente']);
+
+        // menu principal y categorias segun la direccion del cliente
+        Route::post('cliente/lista/servicios-bloque', [ApiMenuController::class, 'listadoMenuPrincipal']);
+        Route::post('cliente/listado/todas/categorias', [ApiMenuController::class, 'listaDeTodasLasCategorias']);
+
+        // historial
+        Route::post('cliente/historial/listado/ordenes', [ApiOrdenesController::class, 'historialOrdenesCliente']);
+
+        // perfil
+        Route::post('cliente/informacion/personal', [ApiClienteController::class, 'informacionCliente']);
+        Route::post('cliente/actualizar/correo', [ApiClienteController::class, 'actualizarCorreoCliente']);
+        Route::post('cliente/actualizar/correo/v2', [ApiClienteController::class, 'actualizarCorreoClienteVersion2']);
+        Route::post('cliente/informacion/restaurante/horario', [ApiClienteController::class, 'informacionHorarioRestaurante']);
+        Route::post('cliente/perfil/actualizar/contrasena', [ApiClienteController::class, 'actualizarPasswordClientePerfil']);
+        Route::post('cliente/opcion/perfil/carrito', [ApiClienteController::class, 'infoBorrarCarritoComprasCliente']);
+        Route::post('cliente/opcion/perfil/carrito/guardar', [ApiClienteController::class, 'actualizarOpcionCarritoCliente']);
+    });
+
+    // ---- rutas donde "clienteid" es el cliente ----
+    Route::middleware('propio:cliente,clienteid')->group(function () {
+        // carrito de compras
+        Route::post('cliente/carrito/producto/agregar', [ApiCarritoComprasController::class, 'agregarProductoCarritoTemporal']);
+        Route::post('cliente/carrito/ver/orden', [ApiCarritoComprasController::class, 'verCarritoDeCompras']);
+        Route::post('cliente/carrito/borrar/orden', [ApiCarritoComprasController::class, 'borrarCarritoDeCompras']);
+        Route::post('cliente/carrito/eliminar/producto', [ApiCarritoComprasController::class, 'borrarProductoDelCarrito']);
+        Route::post('cliente/carrito/ver/producto', [ApiCarritoComprasController::class, 'verProductoCarritoEditar']);
+        Route::post('cliente/carrito/cambiar/cantidad', [ApiCarritoComprasController::class, 'editarCantidadProducto']);
+        Route::post('cliente/carrito/ver/proceso-orden', [ApiCarritoComprasController::class, 'verOrdenAProcesarCliente']);
+        Route::post('cliente/verificar/cupon', [ApiCarritoComprasController::class, 'verificarCupon']);
+
+        // envio de la orden
+        Route::post('cliente/proceso/enviar/orden', [ApiProcesarController::class, 'enviarOrdenRestaurante']);
+
+        // ordenes activas
+        Route::post('cliente/ordenes/listado/activas', [ApiOrdenesController::class, 'verListadoOrdenesActivasCliente']);
+    });
+
+    // ---- rutas de una orden del cliente (se valida que la orden sea suya) ----
+    Route::middleware('propio:cliente')->group(function () {
+        Route::post('cliente/orden/informacion/estado', [ApiOrdenesController::class, 'informacionOrdenIndividual']);
+        Route::post('cliente/listado/productos/ordenes', [ApiOrdenesController::class, 'listadoProductosOrdenes']);
+        Route::post('cliente/listado/productos/ordenes-individual', [ApiOrdenesController::class, 'infoProductoOrdenadoIndividual']);
+        Route::post('cliente/proceso/cancelar/orden', [ApiOrdenesController::class, 'cancelarOrdenPorCliente']);
+        Route::post('cliente/ocultar/mi/orden', [ApiOrdenesController::class, 'ocultameOrdenCliente']);
+
+
+        // cerrar sesion en este dispositivo
+        Route::post('cliente/cerrar-sesion', [ApiClienteController::class, 'cerrarSesion']);
+    });
+
+    // notificacion al restaurante despues de enviar la orden ("id" es la orden del cliente)
+    Route::post('cliente/proceso/orden/notificacion', [ApiProcesarController::class, 'notificacionOrdenParaRestaurante'])
+        ->middleware('propio:cliente,orden=id');
+
+
+    // ============================== APP RESTAURANTE (token) ==============================
+
+    // ---- rutas donde "id" es el usuario del restaurante ----
+    Route::middleware('propio:restaurante,id')->group(function () {
+        Route::post('restaurante/nuevas/ordenes', [ApiOrdenesRestauranteController::class, 'nuevasOrdenes']);
+        Route::post('restaurante/completadashoy/ordenes', [ApiOrdenesRestauranteController::class, 'completadasHoyOrdenes']);
+        Route::post('restaurante/canceladashoy/ordenes', [ApiOrdenesRestauranteController::class, 'canceladasHoyOrdenes']);
+        Route::post('restaurante/listado/categorias', [ApiOrdenesRestauranteController::class, 'listadoDeCategorias']);
+        Route::post('restaurante/historial/ordenes', [ApiOrdenesRestauranteController::class, 'historialOrdenesRestaurantes']);
+        Route::post('restaurante/notificacion/modo/prueba', [ApiOrdenesRestauranteController::class, 'enviarNotificacionPropia']);
+    });
+
+    // ---- ordenes, categorias y productos del restaurante (se valida que sean de su sucursal) ----
+    Route::middleware('propio:restaurante')->group(function () {
+        Route::post('restaurante/listado/producto/orden', [ApiOrdenesRestauranteController::class, 'listadoProductosOrden']);
+        Route::post('restaurante/listado/productos/ordenes-individual', [ApiOrdenesRestauranteController::class, 'infoProductoOrdenadoIndividual']);
+        Route::post('restaurante/proceso/orden/iniciar-orden', [ApiOrdenesRestauranteController::class, 'iniciarOrdenPorRestaurante']);
+        Route::post('restaurante/cancelar/orden', [ApiOrdenesRestauranteController::class, 'cancelarOrden']);
+        Route::post('restaurante/actualizar/estado/categorias', [ApiOrdenesRestauranteController::class, 'actualizarEstadoCategoria']);
+        Route::post('restaurante/categoria/listado/productos', [ApiOrdenesRestauranteController::class, 'listadoDeProductosPorCategoria']);
+        Route::post('restaurante/actualizar/estado/producto', [ApiOrdenesRestauranteController::class, 'actualizarEstadoProducto']);
+
+        // cerrar sesion en este dispositivo
+        Route::post('restaurante/cerrar-sesion', [ApiClienteController::class, 'cerrarSesion']);
+    });
+});

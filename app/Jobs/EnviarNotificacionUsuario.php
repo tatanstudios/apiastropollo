@@ -2,16 +2,13 @@
 
 namespace App\Jobs;
 
-use GuzzleHttp\Client;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
-use OneSignal;
-use Exception;
+use App\Services\OneSignalService;
 
 class EnviarNotificacionUsuario implements ShouldQueue
 {
@@ -22,16 +19,14 @@ class EnviarNotificacionUsuario implements ShouldQueue
      *
      * @return void
      */
-    protected $arrayOnesignal;
+    // ids de clientes: se envia por external_id (app nueva) y por token_fcm (apps viejas)
+    protected $idsClientes;
     protected $titulo;
     protected $descripcion;
 
-    /**
-     * Create a new job instance.
-     */
-    public function __construct($arrayOnesignal, $titulo, $descripcion)
+    public function __construct(array $idsClientes, $titulo, $descripcion)
     {
-        $this->arrayOnesignal = $arrayOnesignal;
+        $this->idsClientes = $idsClientes;
         $this->titulo = $titulo;
         $this->descripcion = $descripcion;
     }
@@ -41,29 +36,11 @@ class EnviarNotificacionUsuario implements ShouldQueue
      */
     public function handle(): void
     {
-        $tituloNoti = $this->titulo;
-        $mensajeNoti = $this->descripcion;
-        $tokenOneSignal = $this->arrayOnesignal;
-
-        try {
-
-            $client = new Client();
-            $response = $client->post('https://onesignal.com/api/v1/notifications', [
-                'json' => [
-                    'app_id' => 'f86a2ee4-a10b-4a86-a063-151be6845bce',
-                    'contents' => ['en' => $mensajeNoti],
-                    'include_player_ids' => is_array($tokenOneSignal) ? $tokenOneSignal : array($tokenOneSignal),
-                    'android_channel_id' => '59f35031-6bad-4833-b73b-00f384c2be89',
-                    'headings' => ['en' => $tituloNoti],
-                ],
-                'headers' => [
-                    'Authorization' => 'Basic ' . 'NWJmYWZlYzAtMDMxNy00NTdkLTlhZTYtODY1YjRjNmIyNzZm',
-                    'Content-Type' => 'application/json; charset=utf-8',
-                ],
-            ]);
-
-        } catch (\Exception $e) {
-            Log::info("Error al enviar la notificación para Clientes");
-        }
+        OneSignalService::enviarClientes(
+            $this->idsClientes,
+            $this->titulo,
+            $this->descripcion,
+            config('googleapi.IdGrupoPasivoCliente')
+        );
     }
 }

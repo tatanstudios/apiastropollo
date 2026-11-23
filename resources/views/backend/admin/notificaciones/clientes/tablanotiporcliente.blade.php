@@ -8,12 +8,12 @@
                             <thead>
                             <tr>
 
-                                <th style="width: 10%">Nombre</th>
-                                <th style="width: 10%">Dirección</th>
-                                <th style="width: 10%">Referencia</th>
-                                <th style="width: 10%">Teléfono</th>
+                                <th>Nombre</th>
+                                <th>Dirección</th>
+                                <th>Referencia</th>
+                                <th>Teléfono</th>
 
-                                <th style="width: 10%">Opciones</th>
+                                <th>Opciones</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -55,7 +55,7 @@
             "searching": true,
             "ordering": true,
             "info": true,
-            "autoWidth": false,
+            "autoWidth": true,
             "pagingType": "full_numbers",
             "lengthMenu": [[10, 25, 50, 100, 150, -1], [10, 25, 50, 100, 150, "Todo"]],
             "language": {
@@ -84,7 +84,7 @@
                 }
 
             },
-            "responsive": true, "lengthChange": true, "autoWidth": false,
+            "responsive": true, "lengthChange": true, "autoWidth": true,
         });
     });
 

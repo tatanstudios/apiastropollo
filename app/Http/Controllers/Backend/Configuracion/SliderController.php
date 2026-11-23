@@ -7,6 +7,7 @@ use App\Models\Categorias;
 use App\Models\Productos;
 use App\Models\Slider;
 use App\Models\SubCategorias;
+use App\Services\Imagenes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -23,29 +24,19 @@ class SliderController extends Controller
     public function index($id){
         // id servicios
 
-        $arrayCategorias = Categorias::where('id_servicios', $id)->get();
-        $pilaIdCategorias = array();
+        // productos del restaurante agrupados por "Categoría › Sub categoría" para el selector
+        $grupoProductos = DB::table('productos AS p')
+            ->join('sub_categorias AS s', 's.id', '=', 'p.id_subcategorias')
+            ->join('categorias AS c', 'c.id', '=', 's.id_categorias')
+            ->where('c.id_servicios', $id)
+            ->orderBy('c.posicion')->orderBy('s.posicion')->orderBy('p.posicion')
+            ->select('p.id', 'p.nombre', 'p.activo', 'c.nombre AS categoria', 's.nombre AS subcategoria')
+            ->get()
+            ->groupBy(fn ($p) => $p->categoria . ' › ' . $p->subcategoria);
 
-        foreach ($arrayCategorias as $info){
-            array_push($pilaIdCategorias, $info->id);
-        }
+        $restaurante = \App\Models\Servicios::where('id', $id)->value('nombre');
 
-
-        // obtener todos los ID de sub categorias
-        $arraySubCate = SubCategorias::whereIn('id_categorias', $pilaIdCategorias)->get();
-
-        $pilaIdSubCategorias = array();
-
-        foreach ($arraySubCate as $info){
-            array_push($pilaIdSubCategorias, $info->id);
-        }
-
-        // obtener todos los productos de las sub categorias
-
-        $arrayProductos = Productos::whereIn('id_subcategorias', $pilaIdSubCategorias)->get();
-
-
-        return view('backend.admin.configuracion.slider.vistaslider', compact('arrayProductos', 'id'));
+        return view('backend.admin.configuracion.slider.vistaslider', compact('grupoProductos', 'id', 'restaurante'));
     }
 
     public function sliderTabla($id){
@@ -53,11 +44,13 @@ class SliderController extends Controller
 
         $slider = Slider::where('id_servicios', $id)->orderBy('posicion')->get();
 
+        $productos = Productos::whereIn('id', $slider->pluck('id_producto')->filter())->get()->keyBy('id');
+
         foreach ($slider as $info){
 
-            if($infoProducto = Productos::where('id', $info->id_producto)->first()){
-                $info->producto = $infoProducto->nombre;
-            }
+            $infoProducto = $productos->get($info->id_producto);
+            $info->producto = $infoProducto ? $infoProducto->nombre : null;
+            $info->producto_activo = $infoProducto ? (int) $infoProducto->activo : null;
 
             $info->hora_abre = date("h:i A", strtotime($info->hora_abre));
             $info->hora_cierra = date("h:i A", strtotime($info->hora_cierra));
@@ -70,17 +63,18 @@ class SliderController extends Controller
 
         // idservicio
 
-        if($request->file('imagen')){
+        // imagen: JPG/PNG real, peso maximo, y se guarda reducida
+        if($error = Imagenes::validar($request, true)){
+            return ['success' => 3, 'mensaje' => $error];
+        }
 
-            $cadena = Str::random(15);
-            $tiempo = microtime();
-            $union = $cadena.$tiempo;
-            $nombre = str_replace(' ', '_', $union);
+        if($request->hasFile('imagen')){
 
-            $extension = '.'.$request->imagen->getClientOriginalExtension();
-            $nombreFoto = $nombre.strtolower($extension);
-            $avatar = $request->file('imagen');
-            $upload = Storage::disk('imagenes')->put($nombreFoto, \File::get($avatar));
+            $nombreFoto = Imagenes::guardar($request->file('imagen'), Imagenes::LADO_BANNER);
+            if(!$nombreFoto){
+                return ['success' => 3, 'mensaje' => Imagenes::mensajeError()];
+            }
+            $upload = true;
 
             if($upload){
 
@@ -129,11 +123,50 @@ class SliderController extends Controller
 
         if ( $validator->fails()){return ['success' => 0];}
 
-        if(Slider::where('id', $request->idslider)->first()){
+        if($info = Slider::where('id', $request->idslider)->first()){
 
-            Slider::where('id', $request->idslider)->update([
+            // version anterior del formulario: solo cambia el estado
+            if(!$request->has('nombre')){
+                Slider::where('id', $request->idslider)->update([
+                    'activo' => $request->toggleactivo,
+                ]);
+                return ['success' => 1];
+            }
+
+            if($request->toggledireccion == 1 && empty($request->producto)){
+                return ['success' => 3, 'mensaje' => 'Selecciona el producto al que redirecciona'];
+            }
+
+            $datos = [
                 'activo' => $request->toggleactivo,
-            ]);
+                'nombre' => $request->nombre,
+                'redireccionamiento' => $request->toggledireccion,
+                'id_producto' => $request->producto ?: null,
+                'usa_horario' => $request->togglehorario,
+                'hora_abre' => $request->horaabre,
+                'hora_cierra' => $request->horacierra,
+            ];
+
+            // imagen nueva (opcional): se valida, se guarda reducida y se borra la anterior
+            if($error = Imagenes::validar($request)){
+                return ['success' => 3, 'mensaje' => $error];
+            }
+
+            $imagenOld = null;
+            if($request->hasFile('imagen')){
+                $nombreFoto = Imagenes::guardar($request->file('imagen'), Imagenes::LADO_BANNER);
+                if(!$nombreFoto){
+                    return ['success' => 3, 'mensaje' => Imagenes::mensajeError()];
+                }
+                $datos['imagen'] = $nombreFoto;
+                $imagenOld = $info->imagen;
+            }
+
+            Slider::where('id', $request->idslider)->update($datos);
+
+            if($imagenOld && Storage::disk('imagenes')->exists($imagenOld)){
+                Storage::disk('imagenes')->delete($imagenOld);
+            }
 
             return ['success' => 1];
         }else{
@@ -166,13 +199,7 @@ class SliderController extends Controller
 
         if($info = Slider::where('id', $request->id)->first()){
 
-            $conteo = Slider::where('id_servicios', $info->id_servicios)
-                ->where('id', '!=', $info->id)
-                ->count();
-
-            if($conteo <= 0){
-                return ['success' => 1];
-            }
+            // se puede borrar aunque sea el ultimo: la app no muestra el bloque si no hay banners
 
             if(Storage::disk('imagenes')->exists($info->imagen)){
                 Storage::disk('imagenes')->delete($info->imagen);

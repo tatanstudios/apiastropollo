@@ -66,25 +66,35 @@ class ApiDireccionesController extends Controller
 
         $zonas = Zonas::where('activo', 1)->get();
 
-        $resultsBloque = array();
-        $index = 0;
+        // una zona puede tener varias areas: se manda una entrada por area, todas con el mismo id,
+        // asi las apps (que buscan el primer poligono que contiene la ubicacion) no necesitan cambios
+        $puntos = DB::table('zonas_poligono')
+            ->whereIn('id_zonas', $zonas->pluck('id'))
+            ->orderBy('parte')->orderBy('id')
+            ->get(['id_zonas', 'parte', 'latitud AS latitudPoligono', 'longitud AS longitudPoligono'])
+            ->groupBy('id_zonas');
 
-        foreach($zonas  as $secciones){
-            array_push($resultsBloque,$secciones);
+        $resultado = [];
 
-            $subSecciones = DB::table('zonas_poligono AS pol')
-                ->select('pol.latitud AS latitudPoligono', 'pol.longitud AS longitudPoligono')
-                ->where('pol.id_zonas', $secciones->id)
-                ->get();
+        foreach($zonas as $secciones){
+            // las apps leen el nombre como "nombreZona"
+            $secciones->nombreZona = $secciones->nombre;
 
-            $resultsBloque[$index]->poligonos = $subSecciones;
-            $index++;
+            $areas = isset($puntos[$secciones->id]) ? $puntos[$secciones->id]->groupBy('parte') : collect([collect()]);
+
+            foreach($areas as $area){
+                $entrada = clone $secciones;
+                $entrada->poligonos = $area->map(fn($p) => [
+                    'latitudPoligono' => $p->latitudPoligono,
+                    'longitudPoligono' => $p->longitudPoligono,
+                ])->values();
+                $resultado[] = $entrada;
+            }
         }
-
 
         return [
             'success' => 1,
-            'poligono' => $zonas
+            'poligono' => $resultado
         ];
     }
 
@@ -96,7 +106,8 @@ class ApiDireccionesController extends Controller
             'nombre' => 'required',
             'direccion' => 'required',
             'id_zona' => 'required',
-            'telefono' => 'required'
+            // 8 digitos (El Salvador) o numero de otro pais con codigo: "+" opcional y hasta 15 digitos
+            'telefono' => ['required', 'regex:/^\+?[0-9]{8,15}$/']
         );
 
         $validarDatos = Validator::make($request->all(), $reglaDatos);
@@ -113,6 +124,8 @@ class ApiDireccionesController extends Controller
                 $di->id_zonas = $request->id_zona;
                 $di->id_cliente = $request->id;
                 $di->nombre = $request->nombre;
+                // etiqueta opcional (Casa, Trabajo...); "nombre" es quien recibe
+                $di->etiqueta = $request->filled('etiqueta') ? mb_substr(trim($request->etiqueta), 0, 50) : null;
                 $di->telefono = $request->telefono;
                 $di->direccion = $request->direccion;
                 $di->punto_referencia = $request->punto_referencia;

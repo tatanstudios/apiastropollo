@@ -28,6 +28,9 @@ class CreateUsuariosServiciosTable extends Migration
             // nombre de la persona
             $table->string('nombre', 100);
 
+            // ultima vez que el restaurante abrio la app
+            $table->dateTime('fecha_entroapp')->nullable();
+
             $table->foreign('id_servicios')->references('id')->on('servicios');
         });
     }

@@ -1,21 +1,16 @@
-@extends('backend.menus.superior')
+@extends('adminlte::page')
 
-@section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+@section('title', 'Permisos Usuarios')
+
+@section('css')
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/responsive.bootstrap4.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/buttons.bootstrap4.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/estiloToggle.css') }}" type="text/css" rel="stylesheet" />
-    <link href="{{ asset('css/buttons_estilo.css') }}" rel="stylesheet">
 @stop
 
-<style>
-    table{
-        /*Ajustar tablas*/
-        table-layout:fixed;
-    }
-</style>
+@section('content')
 
 <div id="divcontenedor" style="display: none">
     <section class="content-header">
@@ -24,7 +19,7 @@
                 <h1>Permisos Usuarios</h1>
             </div>
             <br>
-            <button type="button" style="font-weight: bold; background-color: #28a745; color: white !important;" onclick="modalAgregar()" class="button button-3d button-rounded button-pill button-small">
+            <button type="button" class="btn btn-success btn-sm" onclick="modalAgregar()">
                 <i class="fas fa-pencil-alt"></i>
                 Nuevo Usuario
             </button>
@@ -65,28 +60,28 @@
 
                                     <div class="form-group">
                                         <label>Nombre</label>
-                                        <input type="text" maxlength="50" class="form-control" id="nombre-nuevo" placeholder="Nombre">
+                                        <input type="text" maxlength="100" autocomplete="off" class="form-control" id="nombre-nuevo" placeholder="Nombre">
                                     </div>
 
                                     <div class="form-group">
                                         <label>Usuario</label>
-                                        <input type="text" maxlength="50" class="form-control" id="usuario-nuevo" placeholder="Usuario">
+                                        <input type="text" maxlength="25" autocomplete="off" class="form-control" id="usuario-nuevo" placeholder="Usuario">
                                     </div>
 
                                     <div class="form-group">
                                         <label>Contraseña</label>
-                                        <input type="text" maxlength="16" class="form-control" id="password-nuevo" placeholder="Contraseña">
+                                        <input type="password" maxlength="16" autocomplete="new-password" class="form-control" id="password-nuevo" placeholder="Contraseña">
                                     </div>
 
                                     <div class="form-group">
-                                        <label style="color:#191818">Rol</label>
-                                        <br>
-                                        <div>
-                                            <select class="form-control" id="rol-nuevo">
-                                                @foreach($roles as $key => $value)
-                                                    <option value="{{ $key }}">{{ $value }}</option>
-                                                @endforeach
-                                            </select>
+                                        <label style="color:#191818">Roles</label>
+                                        <div id="roles-nuevo">
+                                            @foreach($roles as $key => $value)
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input" id="rol-nuevo-{{ $key }}" value="{{ $key }}">
+                                                    <label class="custom-control-label" for="rol-nuevo-{{ $key }}">{{ $value }}</label>
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
 
@@ -97,7 +92,7 @@
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="button" style="font-weight: bold; background-color: #28a745; color: white !important;" class="button button-3d button-rounded button-pill button-small" onclick="nuevoUsuario()">Guardar</button>
+                    <button type="button" class="btn btn-primary" onclick="nuevoUsuario()">Guardar</button>
                 </div>
             </div>
         </div>
@@ -120,28 +115,24 @@
                                 <div class="col-md-12">
 
                                     <div class="form-group">
-                                        <label style="color:#191818">Rol</label>
-                                        <br>
-                                        <div>
-                                            <select class="form-control" id="rol-editar">
-                                            </select>
-                                        </div>
+                                        <label style="color:#191818">Roles</label>
+                                        <div id="roles-editar"></div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Nombre</label>
                                         <input type="hidden" id="id-editar">
-                                        <input type="text" maxlength="50"  class="form-control" id="nombre-editar">
+                                        <input type="text" maxlength="100" autocomplete="off" class="form-control" id="nombre-editar">
                                     </div>
 
                                     <div class="form-group">
                                         <label>Usuario</label>
-                                        <input type="text" maxlength="50"  class="form-control" id="usuario-editar">
+                                        <input type="text" maxlength="25" autocomplete="off" class="form-control" id="usuario-editar">
                                     </div>
 
                                     <div class="form-group">
                                         <label>Contraseña</label>
-                                        <input type="text" maxlength="16" class="form-control" id="password-editar" placeholder="Contraseña">
+                                        <input type="password" maxlength="16" autocomplete="new-password" class="form-control" id="password-editar" placeholder="Dejar vacío para no cambiarla">
                                     </div>
 
                                     <div class="form-group">
@@ -163,16 +154,15 @@
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="button" style="font-weight: bold; background-color: #28a745; color: white !important;" class="button button-3d button-rounded button-pill button-small" onclick="actualizar()">Guardar</button>
+                    <button type="button" class="btn btn-primary" onclick="actualizar()">Guardar</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+@stop
 
-@extends('backend.menus.footerjs')
-@section('archivos-js')
-
+@section('js')
     <script src="{{ asset('js/jquery.dataTables.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/dataTables.bootstrap4.js') }}" type="text/javascript"></script>
 
@@ -208,20 +198,25 @@
             $('#modalAgregar').modal('show');
         }
 
+        // ids de los roles marcados dentro de un contenedor
+        function rolesMarcados(contenedor){
+            return $(contenedor + ' input[type=checkbox]:checked').map(function(){ return this.value; }).get();
+        }
+
         // nuevo usuario de sistema
         function nuevoUsuario(){
             var nombre = document.getElementById('nombre-nuevo').value;
             var usuario = document.getElementById('usuario-nuevo').value;
             var password = document.getElementById('password-nuevo').value;
-            var idrol = document.getElementById('rol-nuevo').value;
+            var roles = rolesMarcados('#roles-nuevo');
 
             if(nombre === ''){
                 toastr.error('Nombre es requerido');
                 return;
             }
 
-            if(nombre.length > 50){
-                toastr.error('Máximo 50 caracteres para Nombre');
+            if(nombre.length > 100){
+                toastr.error('Máximo 100 caracteres para Nombre');
                 return;
             }
 
@@ -230,8 +225,8 @@
                 return;
             }
 
-            if(usuario.length > 50){
-                toastr.error('Máximo 50 caracteres para Usuario');
+            if(usuario.length > 25){
+                toastr.error('Máximo 25 caracteres para Usuario');
                 return;
             }
 
@@ -250,8 +245,8 @@
                 return;
             }
 
-            if(idrol === ''){
-                toastr.error('Rol es requerido');
+            if(roles.length === 0){
+                toastr.error('Seleccionar al menos un rol');
                 return;
             }
 
@@ -260,7 +255,7 @@
             formData.append('nombre', nombre);
             formData.append('usuario', usuario);
             formData.append('password', password);
-            formData.append('rol', idrol);
+            roles.forEach(function(r){ formData.append('roles[]', r); });
 
             axios.post('/admin/permisos/nuevo-usuario', formData, {
             })
@@ -301,18 +296,25 @@
                         $('#nombre-editar').val(response.data.info.nombre);
                         $('#usuario-editar').val(response.data.info.usuario);
 
-                        document.getElementById("rol-editar").options.length = 0;
+                        var contenedor = $('#roles-editar').empty();
+                        var asignados = response.data.idrol.map(String);
 
                         $.each(response.data.roles, function( key, val ){
-
-                            if(response.data.idrol[0] == key){
-                                $('#rol-editar').append('<option value="' +key +'" selected="selected">'+val+'</option>');
-                            }else{
-                                $('#rol-editar').append('<option value="' +key +'">'+val+'</option>');
-                            }
+                            var fila = $('<div class="custom-control custom-checkbox"></div>');
+                            $('<input type="checkbox" class="custom-control-input">')
+                                .attr('id', 'rol-editar-' + key)
+                                .val(key)
+                                .prop('checked', asignados.indexOf(String(key)) !== -1)
+                                .appendTo(fila);
+                            // .text escapa el nombre del rol
+                            $('<label class="custom-control-label"></label>')
+                                .attr('for', 'rol-editar-' + key)
+                                .text(val)
+                                .appendTo(fila);
+                            contenedor.append(fila);
                         });
 
-                        if(response.data.info.activo === 0){
+                        if(Number(response.data.info.activo) === 0){
                             $("#toggle-editar").prop("checked", false);
                         }else{
                             $("#toggle-editar").prop("checked", true);
@@ -335,7 +337,7 @@
             var nombre = document.getElementById('nombre-editar').value;
             var usuario = document.getElementById('usuario-editar').value;
             var password = document.getElementById('password-editar').value;
-            var idrol = document.getElementById('rol-editar').value;
+            var roles = rolesMarcados('#roles-editar');
 
             var t = document.getElementById('toggle-editar').checked;
             var toggle = t ? 1 : 0;
@@ -345,8 +347,8 @@
                 return;
             }
 
-            if(nombre.length > 50){
-                toastr.error('Máximo 50 caracteres para Nombre');
+            if(nombre.length > 100){
+                toastr.error('Máximo 100 caracteres para Nombre');
                 return;
             }
 
@@ -355,8 +357,13 @@
                 return;
             }
 
-            if(usuario.length > 50){
-                toastr.error('Máximo 50 caracteres para Usuario');
+            if(usuario.length > 25){
+                toastr.error('Máximo 25 caracteres para Usuario');
+                return;
+            }
+
+            if(roles.length === 0){
+                toastr.error('Seleccionar al menos un rol');
                 return;
             }
 
@@ -379,7 +386,7 @@
             formData.append('usuario', usuario);
             formData.append('password', password);
             formData.append('toggle', toggle);
-            formData.append('rol', idrol);
+            roles.forEach(function(r){ formData.append('roles[]', r); });
 
             axios.post('/admin/permisos/editar-usuario', formData, {
             })
@@ -394,6 +401,12 @@
                         $('#modalEditar').modal('hide');
                         recargar();
                     }
+                    else if(response.data.success === 4){
+                        toastr.error('No puedes desactivar tu propio usuario');
+                    }
+                    else if(response.data.success === 5){
+                        toastr.error('Ninguno de los roles marcados tiene acceso a Roles y Permisos; perderías el acceso');
+                    }
                     else {
                         toastr.error('Error al actualizar');
                     }
@@ -407,6 +420,4 @@
 
 
     </script>
-
-
 @stop

@@ -1,13 +1,14 @@
-@extends('backend.menus.superior')
+@extends('adminlte::page')
 
-@section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+@section('title', 'Direcciones de Cliente')
+
+@section('css')
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/estiloToggle.css') }}" type="text/css" rel="stylesheet" />
-
 @stop
 
+@section('content')
 <section class="content-header">
     <div class="container-fluid">
         <div class="col-sm-12">
@@ -80,14 +81,9 @@
         </div>
     </div>
 </div>
+@stop
 
-
-
-
-
-@extends('backend.menus.footerjs')
-@section('archivos-js')
-
+@section('js')
     <script src="{{ asset('js/jquery.dataTables.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/dataTables.bootstrap4.js') }}" type="text/javascript"></script>
 
@@ -269,6 +265,4 @@
 
 
     </script>
-
-
-@endsection
+@stop

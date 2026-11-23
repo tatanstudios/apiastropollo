@@ -10,4 +10,8 @@ class Slider extends Model
     use HasFactory;
     protected $table = 'slider';
     public $timestamps = false;
+
+    protected $fillable = [
+        'posicion'
+    ];
 }

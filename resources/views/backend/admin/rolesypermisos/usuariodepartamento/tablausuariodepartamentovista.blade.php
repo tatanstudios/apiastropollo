@@ -7,9 +7,9 @@
                         <table id="tabla" class="table table-bordered table-striped">
                             <thead>
                             <tr>
-                                <th style="width: 15%">Nombre</th>
-                                <th style="width: 10%">Usuario</th>
-                                <th style="width: 15%">Departamento</th>
+                                <th>Nombre</th>
+                                <th>Usuario</th>
+                                <th>Departamento</th>
 
                             </tr>
                             </thead>
@@ -42,7 +42,7 @@
             "searching": true,
             "ordering": true,
             "info": true,
-            "autoWidth": false,
+            "autoWidth": true,
             "pagingType": "full_numbers",
             "lengthMenu": [[10, 25, 50, 100, 150, -1], [10, 25, 50, 100, 150, "Todo"]],
             "language": {
@@ -71,7 +71,7 @@
                 }
 
             },
-            "responsive": true, "lengthChange": true, "autoWidth": false,
+            "responsive": true, "lengthChange": true, "autoWidth": true,
         });
     });
 

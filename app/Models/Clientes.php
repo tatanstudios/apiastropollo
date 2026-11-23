@@ -3,11 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
-class Clientes extends Model
+// Cliente de la app. Se autentica en la API con un token de Sanctum (habilidad "cliente").
+class Clientes extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, HasApiTokens;
+
     protected $table = 'clientes';
     public $timestamps = false;
+
+    protected $hidden = ['password', 'token_recuperacion'];
 }

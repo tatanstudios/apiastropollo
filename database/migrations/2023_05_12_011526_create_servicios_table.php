@@ -25,7 +25,6 @@ class CreateServiciosTable extends Migration
             // SI EL RESTAURANTE MOSTRARA BOTON PARA PRIMERA COMPRA
             // 0: no
             // 1: si
-            $table->boolean('modo_prueba');
 
 
         });

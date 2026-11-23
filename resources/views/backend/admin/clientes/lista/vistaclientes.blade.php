@@ -1,184 +1,171 @@
-@extends('backend.menus.superior')
+@extends('adminlte::page')
 
-@section('content-admin-css')
-    <link href="{{ asset('css/adminlte.min.css') }}" type="text/css" rel="stylesheet" />
+@section('title', 'Clientes')
+
+@section('css')
     <link href="{{ asset('css/dataTables.bootstrap4.css') }}" type="text/css" rel="stylesheet" />
+    <link href="{{ asset('css/responsive.bootstrap4.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
-    <link href="{{ asset('css/estiloToggle.css') }}" type="text/css" rel="stylesheet" />
-
+    <style>
+        .filtro-cliente { cursor: pointer; border: 2px solid transparent; }
+        .filtro-cliente:hover { border-color: #ced4da; }
+        .filtro-cliente.activo { border-color: #007bff; }
+        #tabla_processing { z-index: 5; }
+    </style>
 @stop
 
+@php
+    $tarjetas = [
+        'todos' => ['Todos', 'bg-info', 'fas fa-users'],
+        'activo' => ['Activos', 'bg-success', 'fas fa-user-check'],
+        'desactivado' => ['Desactivados', 'bg-secondary', 'fas fa-user-slash'],
+        'nuevo' => ['Nuevos (30 días)', 'bg-primary', 'fas fa-user-plus'],
+        'sinordenes' => ['Nunca han pedido', 'bg-warning', 'fas fa-receipt'],
+    ];
+@endphp
+
+@section('content')
 <section class="content-header">
     <div class="container-fluid">
-        <div class="col-sm-12">
-            <h1>Listado de Clientes Registrados</h1>
-        </div>
-
+        <h1 class="mb-0">Clientes registrados</h1>
+        <p class="text-muted mb-0">Personas con cuenta en la app. Un cliente desactivado no puede entrar ni hacer órdenes.</p>
     </div>
 </section>
 
 <section class="content">
     <div class="container-fluid">
-        <div class="card card-info">
-            <div class="card-header">
-                <h3 class="card-title">Clientes</h3>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div id="tablaDatatable">
+        <div class="row">
+            @foreach($tarjetas as $clave => [$texto, $color, $icono])
+                <div class="col-6 col-md">
+                    <div class="info-box mb-3 filtro-cliente {{ $clave === 'todos' ? 'activo' : '' }}" data-filtro="{{ $clave }}" onclick="filtrarClientes('{{ $clave }}')" title="Filtrar la tabla">
+                        <span class="info-box-icon {{ $color }} elevation-1"><i class="{{ $icono }}"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">{{ $texto }}</span>
+                            <span class="info-box-number">{{ number_format($resumen[$clave]) }}</span>
                         </div>
                     </div>
                 </div>
+            @endforeach
+        </div>
+
+        <div class="card card-primary card-outline">
+            <div class="card-body">
+                <table id="tabla" class="table table-bordered table-striped table-hover" style="width: 100%">
+                    <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th style="width: 160px">Registro</th>
+                        <th style="width: 140px">App</th>
+                        <th style="width: 150px">Estado</th>
+                    </tr>
+                    </thead>
+                </table>
             </div>
         </div>
     </div>
 </section>
+@stop
 
-
-<!-- modal editar -->
-<div class="modal fade" id="modalEditar">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">Información Cliente</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="formulario-editar">
-                    <div class="card-body">
-                        <div class="row">
-
-                            <div class="form-group">
-                                <input type="hidden" id="id-editar">
-                            </div>
-
-                            <div class="form-group" style="margin-left:20px">
-                                <label>Usuario Disponibilidad</label><br>
-                                <label class="switch" style="margin-top:10px">
-                                    <input type="checkbox" id="toggle-activo">
-                                    <div class="slider round">
-                                        <span class="on">Activar</span>
-                                        <span class="off">Desactivar</span>
-                                    </div>
-                                </label>
-                            </div>
-
-
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" id="btnGuardar" onclick="editar()">Guardar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-@extends('backend.menus.footerjs')
-@section('archivos-js')
-
+@section('js')
     <script src="{{ asset('js/jquery.dataTables.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/dataTables.bootstrap4.js') }}" type="text/javascript"></script>
-
+    <script src="{{ asset('js/dataTables.responsive.min.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('js/responsive.bootstrap4.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/axios.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/alertaPersonalizada.js') }}"></script>
-
-    <script type="text/javascript">
-        $(document).ready(function(){
-            var ruta = "{{ URL::to('admin/clientes/listado/tabla') }}";
-            $('#tablaDatatable').load(ruta);
-        });
-    </script>
+    @include('backend.partials.datatable_es')
 
     <script>
+        var filtroClientes = 'todos';
+        var tabla;
 
-        function recargar(){
-            var ruta = "{{ URL::to('admin/clientes/listado/tabla') }}";
-            $('#tablaDatatable').load(ruta);
+        function esc(texto) {
+            return $('<div>').text(texto == null ? '' : String(texto)).html();
         }
 
-        // informacion
-        function verInformacion(id){
+        $(function () {
+            tabla = iniciarTabla('#tabla', {
+                "processing": true,
+                "serverSide": true,
+                "searchDelay": 400,
+                "pageLength": 25,
+                // con miles de clientes no se ofrece "Todo"
+                "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "order": [[1, 'desc']],
+                "ajax": {
+                    "url": "{{ url('/admin/clientes/listado/tabla') }}",
+                    "data": function (d) { d.filtro = filtroClientes; },
+                    "error": function () { toastr.error('No se pudieron cargar los clientes'); }
+                },
+                "columns": [
+                    { "data": "usuario", "render": function (v, t, c) {
+                        return '<b>' + esc(c.usuario) + '</b>'
+                            + (c.nuevo ? ' <span class="badge bg-primary">nuevo</span>' : '')
+                            + '<div class="small text-muted">' + (c.correo ? esc(c.correo) : 'Sin correo') + '</div>';
+                    } },
+                    { "data": "fecha", "render": esc },
+                    { "data": "version", "render": function (v, t, c) {
+                        var icono = c.sistema === 'android' ? '<i class="fab fa-android fa-lg text-success mr-1" title="Android"></i>'
+                            : (c.sistema === 'ios' ? '<i class="fab fa-apple fa-lg mr-1" title="iPhone"></i>'
+                            : '<i class="fas fa-question-circle text-muted mr-1" title="Esta versión de la app no guardaba si era Android o iPhone"></i>');
+                        return icono + (c.version ? esc(c.version) : '—');
+                    } },
+                    { "data": "activo", "render": function (v, t, c) {
+                        return '<div class="custom-control custom-switch">'
+                            + '<input type="checkbox" class="custom-control-input" id="activo-' + c.id + '"' + (v ? ' checked' : '')
+                            + ' onchange="cambiarActivo(' + c.id + ', this)" data-nombre="' + esc(c.usuario) + '">'
+                            + '<label class="custom-control-label" for="activo-' + c.id + '">' + (v ? 'Activo' : 'Desactivado') + '</label>'
+                            + '</div>';
+                    } }
+                ]
+            });
+        });
 
-            document.getElementById("formulario-editar").reset();
-            openLoading();
-
-            axios.post('/admin/clientes/listado/informacion',{
-                'id': id
-            })
-                .then((response) => {
-                    closeLoading();
-                    if(response.data.success === 1){
-
-                        $('#modalEditar').modal('show');
-                        $('#id-editar').val(id);
-
-                        if(response.data.cliente.activo === 0){
-                            $("#toggle-activo").prop("checked", false);
-                        }else{
-                            $("#toggle-activo").prop("checked", true);
-                        }
-
-                    }else{
-                        toastr.error('Información no encontrada');
-                    }
-                })
-                .catch((error) => {
-                    closeLoading();
-                    toastr.error('Error del servidor');
-                });
+        function filtrarClientes(filtro) {
+            filtroClientes = filtro;
+            $('.filtro-cliente').removeClass('activo');
+            $('.filtro-cliente[data-filtro="' + filtro + '"]').addClass('activo');
+            if (tabla) { tabla.ajax.reload(); }
         }
 
-
-        // editar
-        function editar() {
-            var id = document.getElementById('id-editar').value;
-
-            var cbactivo = document.getElementById('toggle-activo').checked;
-            var toggleActivo = cbactivo ? 1 : 0;
-
-            let formData = new FormData();
-            formData.append('id', id);
-            formData.append('activo', toggleActivo);
-
+        function enviarActivo(id, activo, interruptor) {
             openLoading();
-
-            axios.post('/admin/clientes/informacion/editar', formData, {
-            })
-                .then((response) => {
-                    closeLoading()
-
+            axios.post('/admin/clientes/informacion/editar', { id: id, activo: activo })
+                .then(function (response) {
+                    closeLoading();
                     if (response.data.success === 1) {
-                        toastr.success('Cliente Actualizado');
-                        $('#modalEditar').modal('hide');
-                        recargar();
-                    }
-                    else {
-                        toastr.error('Error al guardar');
+                        toastr.success(activo ? 'Cliente activado' : 'Cliente desactivado');
+                        $(interruptor).next('label').text(activo ? 'Activo' : 'Desactivado');
+                    } else {
+                        interruptor.checked = !interruptor.checked;
+                        toastr.error('Error al actualizar');
                     }
                 })
-                .catch((error) => {
+                .catch(function () {
                     closeLoading();
+                    interruptor.checked = !interruptor.checked;
                     toastr.error('Error del servidor');
                 });
         }
 
+        function cambiarActivo(id, interruptor) {
+            if (interruptor.checked) { enviarActivo(id, 1, interruptor); return; }
 
-        function vistaDirecciones(id){
-            window.location.href="{{ url('/admin/clientes/direcciones/listado') }}/"+id;
+            Swal.fire({
+                titleText: '¿Desactivar a ' + $(interruptor).data('nombre') + '?',
+                text: 'Se cierra su sesión en la app y no podrá volver a entrar ni hacer órdenes hasta que lo actives.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, desactivar',
+                cancelButtonText: 'Cancelar'
+            }).then(function (result) {
+                if (result.isConfirmed) { enviarActivo(id, 0, interruptor); }
+                else { interruptor.checked = true; }
+            });
         }
-
-
-
     </script>
-
-
-@endsection
+@stop

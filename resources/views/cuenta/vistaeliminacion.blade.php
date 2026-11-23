@@ -1,9 +1,9 @@
 <!doctype html><html lang="es"><meta charset="utf-8">
-<title>Eliminar cuenta – Control Motoristas | Tatan Studios</title>
+<title>Eliminar cuenta – Astro Restaurante | Tatan Studios</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <body style="max-width:720px;margin:40px auto;font-family:system-ui">
 <h1>Solicitud de eliminación de cuenta y datos</h1>
-<p>Esta página pertenece a <strong>ASTRO POLLO</strong> para la app <strong>Astro Restaurante y Astro Motorista</strong>.</p>
+<p>Esta página pertenece a <strong>ASTRO POLLO</strong> para la app <strong>Astro Restaurante</strong>.</p>
 <p>Al enviar esta solicitud, eliminaremos tu cuenta y los datos asociados. Podrían existir datos retenidos por obligaciones legales (p. ej., facturación) por un tiempo limitado; luego se anonimizarán o eliminarán.</p>
 <p>Plazo estimado de atención: <strong>hasta 30 días</strong>. Si necesitamos verificar tu identidad, te contactaremos al correo indicado.</p>
 

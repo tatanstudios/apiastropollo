@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Api\Procesar;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\EnviarNotificacionRestaurante;
+use App\Jobs\NotificarNuevaOrden;
 use App\Models\CarritoExtra;
 use App\Models\CarritoTemporal;
 use App\Models\Categorias;
+use App\Models\CierresProgramados;
 use App\Models\Clientes;
-use App\Models\ClientesPremios;
-use App\Models\CuponDescuentoDinero;
-use App\Models\CuponDescuentoPorcentaje;
 use App\Models\Cupones;
 use App\Models\CuponProductoGratis;
 use App\Models\DireccionCliente;
@@ -18,12 +16,11 @@ use App\Models\HorarioServicio;
 use App\Models\Ordenes;
 use App\Models\OrdenesDescripcion;
 use App\Models\OrdenesDirecciones;
-use App\Models\OrdenesPremio;
-use App\Models\Premios;
 use App\Models\SubCategorias;
 use App\Models\UsuariosServicios;
 use App\Models\Zonas;
 use App\Models\ZonasServicio;
+use App\Services\Modificadores;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -58,7 +55,21 @@ class ApiProcesarController extends Controller
 
             // ** BUSCAR ESTE SERVICIO DONDE ESTA ASIGNADO, SI ES BORRADO MOSTRAR SERVICIO CERRADO
 
-            if($infoZonaServicio = ZonasServicio::where('id_servicios', $infoCarritoTempo->id_servicios)->first()){
+            // la zona es la de la direccion seleccionada del cliente (de ahi salen cierre, horario,
+            // minimo y tiempo extra); antes se tomaba la primera zona del restaurante.
+            // Si la direccion no es de este restaurante se mantiene el comportamiento anterior.
+            $infoZonaServicio = null;
+            if($infoDireccionZona = DireccionCliente::where('id_cliente', $request->clienteid)
+                ->where('seleccionado', 1)->first()){
+                $infoZonaServicio = ZonasServicio::where('id_zonas', $infoDireccionZona->id_zonas)
+                    ->where('id_servicios', $infoCarritoTempo->id_servicios)
+                    ->first();
+            }
+            if($infoZonaServicio == null){
+                $infoZonaServicio = ZonasServicio::where('id_servicios', $infoCarritoTempo->id_servicios)->first();
+            }
+
+            if($infoZonaServicio){
 
                 $infoZona = Zonas::where('id', $infoZonaServicio->id_zonas)->first();
 
@@ -69,6 +80,11 @@ class ApiProcesarController extends Controller
                     $titulo = "Nota";
                     $mensaje = $infoZona->mensaje_bloqueo;
                     return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
+                }
+
+                // REGLA: CIERRE PROGRAMADO POR FECHA (DEL RESTAURANTE O DE TODOS)
+                if($cierreProgramado = CierresProgramados::vigenteHoy((int) $infoCarritoTempo->id_servicios)){
+                    return ['success' => 1, 'titulo' => 'Nota', 'mensaje' => $cierreProgramado->mensaje];
                 }
 
 
@@ -167,8 +183,17 @@ class ApiProcesarController extends Controller
                     }
 
 
+                    // OPCIONES ELEGIDAS: se validan con las reglas actuales del producto
+                    $validacion = Modificadores::validarFila((int) $pro->productoID, (int) $pro->carritoid);
+                    $pro->modificadoresOk = $validacion['ok'];
+                    $pro->modificadoresMensaje = $validacion['mensaje'];
+                    $pro->lineas = $validacion['lineas'];
+
+                    // precio por unidad = producto + opciones (es el que se guarda en la orden)
+                    $pro->precioUnidad = round((float) $pro->precio + $validacion['extra'], 2);
+
                     // MULTIPLICAR PARA SACAR TOTAL
-                    $multi = $pro->precio * $pro->cantidad;
+                    $multi = $pro->precioUnidad * $pro->cantidad;
                     $totalCarrito = $totalCarrito + $multi;
                 }
 
@@ -179,6 +204,15 @@ class ApiProcesarController extends Controller
                     $titulo = "Revisión";
                     $mensaje = "Uno o más Productos no estan disponibles, revisar el Carrito de Compras. Gracias";
                     return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
+                }
+
+                // REGLA: LAS OPCIONES DE UN PRODUCTO CAMBIARON Y YA NO SON VALIDAS
+                foreach ($producto as $pro) {
+                    if(!$pro->modificadoresOk){
+                        $titulo = "Revisa las opciones";
+                        $mensaje = "«" . $pro->nombre . "»: " . $pro->modificadoresMensaje;
+                        return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
+                    }
                 }
 
 
@@ -219,15 +253,7 @@ class ApiProcesarController extends Controller
                 }
 
 
-                // esto sera el resultado final si se aplica cupon $$
-                $totalCarritoCupon = null;
-
-
                 /// ************** VALIDAR CUPONES PARA DESPUES VALIDAR MINIMO DE COMPRA POR ZONA **********
-
-                // Esto solo me sirve para evitar verificar minimo de compra con el total del cupon, cuando
-                // no quiero producto gratis
-                $tipoCupon = null;
 
                 // una descripcion si se aplico el cupon para guardar historial
                 $mensajeCupon = null;
@@ -258,9 +284,7 @@ class ApiProcesarController extends Controller
                         }
 
 
-                        // CONOCER QUE CUPON ES
-
-                        // * PRODUCTO GRATIS
+                        // SOLO EXISTE EL CUPON DE PRODUCTO GRATIS
 
                         if($infoCupon->id_tipo_cupon == 1){
 
@@ -270,7 +294,6 @@ class ApiProcesarController extends Controller
                                 ->first()){
 
 
-                                $tipoCupon = 1;
                                 $idCupones = $infoCupon->id;
 
                                 $mensajeCupon = "Aplico para producto Gratis: " . $infoCuponProGratis->nombre;
@@ -280,63 +303,6 @@ class ApiProcesarController extends Controller
                                 $mensaje = "Cupón no válido";
                                 return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
                             }
-                        }
-
-                        // DESCUENTO DE DINERO
-                        else if($infoCupon->id_tipo_cupon == 2) {
-
-                            // VERIFICAR QUE EL SERVICIO DONDE ESTOY COMPRANDO ACEPTA ESTE CUPON
-                            if($infoCuponDescuentoDin = CuponDescuentoDinero::where('id_cupones', $infoCupon->id)
-                                ->where('id_servicios', $infoCarritoTempo->id_servicios)
-                                ->first()){
-
-                                $resta = $totalCarrito - $infoCuponDescuentoDin->dinero;
-                                if($resta <= 0){
-                                    $resta = 0;
-                                }
-
-                                $tipoCupon = 2;
-                                $idCupones = $infoCupon->id;
-                                $totalCarritoCupon = $resta;
-
-                                $mensajeCupon = "Aplico para Descuento Dinero de $" . $infoCuponDescuentoDin->dinero;
-
-                            }else{
-                                $titulo = "Nota";
-                                $mensaje = "Cupón no válido";
-                                return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
-                            }
-
-                        }
-
-                        // DESCUENTO DE PORCENTAJE
-                        else if($infoCupon->id_tipo_cupon == 3) {
-
-                            // VERIFICAR QUE EL SERVICIO DONDE ESTOY COMPRANDO ACEPTA ESTE CUPON
-                            if($infoCuponDescuentoPor = CuponDescuentoPorcentaje::where('id_cupones', $infoCupon->id)
-                                ->where('id_servicios', $infoCarritoTempo->id_servicios)
-                                ->first()){
-
-                                $resta = $totalCarrito * ($infoCuponDescuentoPor->porcentaje / 100);
-                                $final = $totalCarrito - $resta;
-
-                                if($final <= 0){
-                                    $final = 0;
-                                }
-
-
-                                $tipoCupon = 3;
-                                $idCupones = $infoCupon->id;
-                                $totalCarritoCupon = $final;
-
-                                $mensajeCupon = "Aplico para Descuento Porcentaje de " . $infoCuponDescuentoPor->porcentaje . "%";
-
-                            }else{
-                                $titulo = "Nota";
-                                $mensaje = "Cupón no válido";
-                                return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
-                            }
-
                         }
 
                         // Cupon no encontrado
@@ -359,8 +325,7 @@ class ApiProcesarController extends Controller
 
 
 
-                // CALCULARE EL MINIMO DE COMPRA SIEMPRE CON LA VENTA, IGNORANDO CUPONES.
-                // PORQUE EL CHISTE ES VENDER ALGO CARO, PARA QUE DESQUITE EL DESCUENTO
+                // MINIMO DE COMPRA POR ZONA
 
                 if($totalCarrito < $infoZona->minimo){
 
@@ -377,33 +342,10 @@ class ApiProcesarController extends Controller
 
 
 
-                // REGLA: NO ALCANZAN LOS PUNTOS SI EL CLIENTE TIENE SELECCIONADO UN PREMIO
-                if($infoClientePremio = ClientesPremios::where('id_clientes', $request->clienteid)->first()){
-
-                    $infoPremio = Premios::where('id', $infoClientePremio->id_premios)->first();
-
-                    // si hay premio seleccionado
-                    if($infoCliente->puntos >= $infoPremio->puntos){
-
-                       // SI ALCANZAN LOS PUNTOS, PERO REGISTRAR ABAJO DE CUANDO SE CREA LA ORDEN
-
-                    }else{
-
-                        $titulo = "Nota";
-                        $mensaje = "Puntos insuficientes para reclamar el Premio.";
-                        return ['success' => 1, 'titulo' => $titulo, 'mensaje' => $mensaje];
-                    }
-                }
-
-
-
-
-
-
-
-
-
                 //*********** VALIDACIONES COMPLETADAS  **************
+
+                // todo o nada: si algo falla, no queda la orden sin direccion o sin productos
+                DB::beginTransaction();
 
                 try {
 
@@ -430,62 +372,15 @@ class ApiProcesarController extends Controller
                     $orden->fecha_estimada = null;
                     $orden->estado_iniciada = 0;
                     $orden->fecha_iniciada = null;
-                    $orden->estado_preparada = 0;
-                    $orden->fecha_preparada = null;
-                    $orden->estado_camino = 0;
-                    $orden->fecha_camino = null;
-                    $orden->estado_entregada = 0;
-                    $orden->fecha_entregada = null;
                     $orden->nota_cancelada = null;
                     $orden->id_cupones = $idCupones;
                     $orden->id_cupones_copia = $idCupones;
-                    $orden->total_cupon = $totalCarritoCupon;
                     $orden->mensaje_cupon = $mensajeCupon;
                     $orden->visible = 1;
                     $orden->cancelado_por = 0;
                     $orden->conteo_notificacion = 0;
 
                     $orden->save();
-
-
-                    // REGISTRAR EL PREMIO, YA VALIDADO ARRIBA, QUE ALCANCEN LOS PUNTOS
-
-                    if($infoClientePremio = ClientesPremios::where('id_clientes', $request->clienteid)->first()){
-
-                        $infoPremio = Premios::where('id', $infoClientePremio->id_premios)->first();
-
-                            $resta = $infoCliente->puntos - $infoPremio->puntos;
-
-                            // SUMAR LOS PUNTOS QUE GANO AL HACER ESTA ORDEN
-
-
-                            if($totalCarritoCupon != null){
-                                // si aplico cupo de dinero o porcentaje
-                                $resta = $resta + intval($totalCarritoCupon);
-
-                            }else{
-                                // no se aplico ningun cupon
-                                $resta = $resta + intval($totalCarrito);
-                            }
-
-
-                            Clientes::where('id', $infoCliente->id)
-                                ->update(['puntos' => $resta]);
-
-                            $datoRegistro = new OrdenesPremio();
-                            $datoRegistro->id_ordenes = $orden->id;
-                            $datoRegistro->id_cliente = $infoCliente->id;
-                            $datoRegistro->nombre = $infoPremio->nombre;
-                            $datoRegistro->puntos = $infoPremio->puntos;
-                            $datoRegistro->save();
-
-
-                            // BORRAR LA SELECCION
-                            ClientesPremios::where('id_clientes', $request->clienteid)->delete();
-                    }
-
-
-                    // LA SUMA DE PUNTOS AL CLIENTE AL ORDENAR, SE HARA CUANDO EL MOTORISTA FINALICE EL PEDIDO
 
 
                     $infoDireccion = DireccionCliente::where('id_cliente', $request->clienteid)
@@ -511,14 +406,18 @@ class ApiProcesarController extends Controller
 
 
                     // guadar todos los productos de esa orden
+                    // el precio guardado es por unidad e incluye las opciones; las opciones se copian
+                    // para que la orden no cambie si luego se editan los modificadores del producto
                     foreach($producto as $p){
 
                         $data = array('id_ordenes' => $orden->id,
                             'id_producto' => $p->productoID,
                             'cantidad' => $p->cantidad,
                             'nota' => $p->nota_producto,
-                            'precio' => $p->precio);
-                        OrdenesDescripcion::insert($data);
+                            'precio' => $p->precioUnidad);
+                        $idDescripcion = OrdenesDescripcion::insertGetId($data);
+
+                        Modificadores::copiarAOrden($idDescripcion, $p->lineas);
                     }
 
 
@@ -530,13 +429,23 @@ class ApiProcesarController extends Controller
 
 
 
-                    if($request->idfirebase != null){
+                    if($request->externo == 1){
+                        if($infoCliente->token_fcm != null){
+                            Clientes::where('id', $infoCliente->id)->update(['token_fcm' => null]);
+                        }
+                    }
+                    else if($request->idfirebase != null){
                         Clientes::where('id', $infoCliente->id)->update(['token_fcm' => $request->idfirebase]);
                     }
 
 
 
                     DB::commit();
+
+                    // aviso al restaurante (push; luego WhatsApp). Corre despues de responder al
+                    // cliente y si falla no afecta la orden, que ya quedo guardada.
+                    NotificarNuevaOrden::despachar($orden->id);
+
                     $titulo = "Orden #" . $orden->id;
                     $mensaje = "Espere la notificación del Restaurante para verificar su orden";
                     return ['success' => 10, 'titulo' => $titulo, 'mensaje' => $mensaje, 'idorden' => $orden->id];
@@ -565,45 +474,17 @@ class ApiProcesarController extends Controller
     }
 
 
-    // DESPUES QUE LA ORDEN FUE ENVIADA, EL CLIENTE PEDIRA QUE ENVIE NOTIFICACION A
-    // RESTAURANTE
+    // OBSOLETO: el aviso al restaurante ahora lo envia el servidor al guardar la orden
+    // (Job NotificarNuevaOrden). Se deja para las apps cliente ya instaladas que todavia
+    // llaman este endpoint: responde igual que antes pero NO envia nada, para no duplicar el aviso.
 
     public function notificacionOrdenParaRestaurante(Request $request){
 
+        $validator = Validator::make($request->all(), ['id' => 'required']);
+        if ($validator->fails()){ return ['success' => 0]; }
 
-        $rules = array(
-            'id' => 'required'
-        );
-
-        $validator = Validator::make($request->all(), $rules);
-
-        if ( $validator->fails()){return ['success' => 0];}
-
-
-        if($infoOrden = Ordenes::where('id', $request->id)->first()){
-
-            if($infoUsuario = UsuariosServicios::where('id_servicios', $infoOrden->id_servicio)
-                ->where('bloqueado', 0)
-                ->first()){
-
-                    if($infoUsuario->token_fcm != null){
-
-                        // ENVIAR NOTIFICACION
-
-                        $titulo = "Nueva Orden #" . $infoOrden->id;
-                        $mensaje = "Revisar Pedido";
-
-                        $tokenUsuario = $infoUsuario->token_fcm;
-
-
-                        dispatch(new EnviarNotificacionRestaurante($tokenUsuario, $titulo, $mensaje));
-                    }
-            }
-
-            return ['success' => 1];
-        }
-        else{
-            return ['success' => 2];
-        }
+        return Ordenes::where('id', $request->id)->exists()
+            ? ['success' => 1]
+            : ['success' => 2];
     }
 }
