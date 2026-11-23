@@ -7,38 +7,36 @@ use Illuminate\Database\Seeder;
 
 class AdminSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
+        // Administrador principal
+        $admin = Administrador::firstOrCreate(
+            ['usuario' => 'Admin'],
+            [
+                'nombre' => 'Administrador',
+                'password' => bcrypt('prueba'),
+                'activo' => '1',
+                'correo' => 'tatangamess@gmail.com',
+                'token_correo' => null,
+                'token_fecha' => null
+            ]
+        );
 
-        Administrador::create([
-            'nombre' => 'Administrador',
-            'usuario' => 'Admin',
-            'password' => bcrypt('prueba'),
-            'activo' => '1',
-            'correo' => 'tatangamess@gmail.com',
-            'token_correo' => null,
-            'token_fecha' => null
-        ])->assignRole('Admin');
+        $admin->syncRoles(['Admin']);
 
-        Administrador::create([
-            'nombre' => 'Roles',
-            'usuario' => 'roles',
-            'password' => bcrypt('1234'),
-            'activo' => '1',
-            'correo' => '',
-            'token_correo' => null,
-            'token_fecha' => null
-        ])->assignRole('RolesControl');
+        // Usuario de operaciones
+        $roles = Administrador::firstOrCreate(
+            ['usuario' => 'roles'],
+            [
+                'nombre' => 'Roles',
+                'password' => bcrypt('1234'),
+                'activo' => '1',
+                'correo' => '',
+                'token_correo' => null,
+                'token_fecha' => null
+            ]
+        );
 
-
-
-
-
-
+        $roles->syncRoles(['RolesControl']);
     }
 }
