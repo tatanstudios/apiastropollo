@@ -52,7 +52,7 @@
                 <!-- Logo -->
                 <tr>
                     <td align="center" style="padding:36px 24px 8px;">
-                        <img src="http://astropolloapp.com/storage/correoimg/image-4.png" width="120" alt="Astro Pollo" style="width:120px; max-width:120px; height:auto; border-radius:24px;">
+                        <img src="{{ asset('storage/correoimg/image-4.png') }}" width="120" alt="Astro Pollo" style="width:120px; max-width:120px; height:auto; border-radius:24px;">
                     </td>
                 </tr>
 
@@ -62,7 +62,7 @@
                         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                             <tr>
                                 <td align="center" style="width:72px; height:72px; background-color:#c51818; border-radius:36px;">
-                                    <img src="http://astropolloapp.com/storage/correoimg/image-3.png" width="40" alt="" style="width:40px; height:auto; margin:16px auto;">
+                                    <img src="{{ asset('storage/correoimg/image-3.png') }}" width="40" alt="" style="width:40px; height:auto; margin:16px auto;">
                                 </td>
                             </tr>
                         </table>
@@ -145,12 +145,12 @@
                             <tr>
                                 <td style="padding:0 8px;">
                                     <a href="https://www.facebook.com/AstroPolloElSalvador" target="_blank" title="Facebook">
-                                        <img src="http://astropolloapp.com/storage/correoimg/image-2.png" width="32" alt="Facebook" style="width:32px; height:auto;">
+                                        <img src="{{ asset('storage/correoimg/image-2.png') }}" width="32" alt="Facebook" style="width:32px; height:auto;">
                                     </a>
                                 </td>
                                 <td style="padding:0 8px;">
                                     <a href="https://www.instagram.com/astropollosv/" target="_blank" title="Instagram">
-                                        <img src="http://astropolloapp.com/storage/correoimg/image-1.png" width="32" alt="Instagram" style="width:32px; height:auto;">
+                                        <img src="{{ asset('storage/correoimg/image-1.png') }}" width="32" alt="Instagram" style="width:32px; height:auto;">
                                     </a>
                                 </td>
                             </tr>

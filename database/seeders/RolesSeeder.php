@@ -20,22 +20,21 @@ class RolesSeeder extends Seeder
         $roleAdmin = Role::create(['name' => 'Admin']);
 
         // REALIZA TODAS LAS FUNCIONES MENOS LOS ROLES Y PERMISOS
-        $roleEditor = Role::create(['name' => 'Editor']);
+        $roleRoles = Role::create(['name' => 'Roles']);
 
 
         // Roles y Permisos
-        Permission::create(['name' => 'sidebar.roles.y.permisos', 'description' => 'Vista para permisos'])->syncRoles($roleAdmin);
+        Permission::create(['name' => 'sidebar.roles.y.permisos', 'description' => 'Vista para permisos'])->syncRoles($roleRoles);
 
+        Permission::create(['name' => 'sidebar.zonas', 'description' => 'Vista para creacion de zonas'])->syncRoles([$roleAdmin]);
 
-        Permission::create(['name' => 'sidebar.zonas', 'description' => 'Vista para creacion de zonas'])->syncRoles([$roleAdmin, $roleEditor]);
+        Permission::create(['name' => 'sidebar.ordenes', 'description' => 'Vista para ver ordenes'])->syncRoles([$roleAdmin]);
 
-        Permission::create(['name' => 'sidebar.ordenes', 'description' => 'Vista para ver ordenes'])->syncRoles([$roleAdmin, $roleEditor]);
+        Permission::create(['name' => 'sidebar.usuarios', 'description' => 'Vista para ver usuarios de todos'])->syncRoles([$roleAdmin]);
 
-        Permission::create(['name' => 'sidebar.usuarios', 'description' => 'Vista para ver usuarios de todos'])->syncRoles([$roleAdmin, $roleEditor]);
+        Permission::create(['name' => 'sidebar.notificaciones', 'description' => 'vista para notificaciones'])->syncRoles([$roleAdmin]);
 
-        Permission::create(['name' => 'sidebar.notificaciones', 'description' => 'vista para notificaciones'])->syncRoles([$roleAdmin, $roleEditor]);
-
-        Permission::create(['name' => 'sidebar.reportes', 'description' => 'vista para reportes'])->syncRoles([$roleAdmin, $roleEditor]);
+        Permission::create(['name' => 'sidebar.reportes', 'description' => 'vista para reportes'])->syncRoles([$roleAdmin]);
 
 
 

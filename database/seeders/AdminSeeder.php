@@ -17,8 +17,8 @@ class AdminSeeder extends Seeder
 
         Administrador::create([
             'nombre' => 'Administrador',
-            'usuario' => 'tatan',
-            'password' => bcrypt('administrador'),
+            'usuario' => 'Admin',
+            'password' => bcrypt('prueba'),
             'activo' => '1',
             'correo' => 'tatangamess@gmail.com',
             'token_correo' => null,
@@ -26,11 +26,11 @@ class AdminSeeder extends Seeder
         ])->assignRole('Admin');
 
         Administrador::create([
-            'nombre' => 'Editor',
-            'usuario' => 'administrador',
+            'nombre' => 'Roles',
+            'usuario' => 'roles',
             'password' => bcrypt('1234'),
             'activo' => '1',
-            'correo' => 'tatangamess@gmail.com',
+            'correo' => '',
             'token_correo' => null,
             'token_fecha' => null
         ])->assignRole('Editor');
