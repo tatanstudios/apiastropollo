@@ -20,7 +20,7 @@ class RolesSeeder extends Seeder
         $roleAdmin = Role::create(['name' => 'Admin']);
 
         // REALIZA TODAS LAS FUNCIONES MENOS LOS ROLES Y PERMISOS
-        $roleRoles = Role::create(['name' => 'Roles']);
+        $roleRoles = Role::create(['name' => 'RolesControl']);
 
 
         // Roles y Permisos
@@ -35,17 +35,6 @@ class RolesSeeder extends Seeder
         Permission::create(['name' => 'sidebar.notificaciones', 'description' => 'vista para notificaciones'])->syncRoles([$roleAdmin]);
 
         Permission::create(['name' => 'sidebar.reportes', 'description' => 'vista para reportes'])->syncRoles([$roleAdmin]);
-
-
-
-
-
-
-
-
-
-
-
 
 
     }

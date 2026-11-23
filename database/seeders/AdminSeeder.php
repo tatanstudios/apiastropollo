@@ -33,7 +33,7 @@ class AdminSeeder extends Seeder
             'correo' => '',
             'token_correo' => null,
             'token_fecha' => null
-        ])->assignRole('Editor');
+        ])->assignRole('RolesControl');
 
 
 
