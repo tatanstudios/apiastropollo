@@ -400,7 +400,8 @@ class ApiProcesarController extends Controller
                     $dirCliente->longitud = $infoDireccion->longitud;
                     $dirCliente->latitudreal = $infoDireccion->latitudreal;
                     $dirCliente->longitudreal = $infoDireccion->longitudreal;
-                    $dirCliente->appversion = $request->version;
+                    // "android 4.0.0" / "ios 4.0.0": el sistema se detecta del telefono que envia la orden
+                    $dirCliente->appversion = \App\Http\Controllers\Api\Registro\ApiRegistroController::versionConSistema($request->version, $request->userAgent());
 
                     $dirCliente->save();
 

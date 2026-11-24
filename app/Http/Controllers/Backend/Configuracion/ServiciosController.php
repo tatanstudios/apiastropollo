@@ -226,13 +226,11 @@ class ServiciosController extends Controller
         $validar = Validator::make($request->all(), [
             'idservicio' => ($nuevo ? 'required' : 'nullable') . '|integer|exists:servicios,id',
             'nombre' => 'required|string|max:100',
-            'usuario' => ['required', 'string', 'max:20', 'not_regex:/\s/u'],
+            'usuario' => 'required|string|max:20',
             'password' => ($nuevo ? 'required' : 'nullable') . '|string|min:4|max:50',
         ], [
             'password.min' => 'La contraseña debe tener al menos 4 caracteres',
-            'usuario.max' => 'El usuario puede tener máximo 20 caracteres',
-            'usuario.not_regex' => 'El usuario no puede tener espacios',
-        ]);
+            'usuario.max' => 'El usuario puede tener máximo 20 caracteres',        ]);
 
         if($validar->fails()){
             return $validar->errors()->first() ?: 'Revisa los datos';

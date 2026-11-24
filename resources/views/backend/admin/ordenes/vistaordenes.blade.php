@@ -234,6 +234,12 @@
             return '<p class="detalle-dato">' + etiqueta + '</p><p class="mb-2">' + valor + '</p>';
         }
 
+        function iconoSistema(sistema) {
+            if (sistema === 'android') { return '<i class="fab fa-android fa-lg text-success mr-1" title="Android"></i>'; }
+            if (sistema === 'ios') { return '<i class="fab fa-apple fa-lg mr-1" title="iPhone"></i>'; }
+            return '<i class="fas fa-question-circle text-muted mr-1" title="Orden enviada antes de que se guardara si era Android o iPhone"></i>';
+        }
+
         function verDetalle(id) {
             openLoading();
             axios.post('/admin/ordenes/detalle', { id: id })
@@ -253,7 +259,7 @@
                             : '';
                         cliente = fila('Nombre', esc(c.nombre)) + fila('Teléfono', esc(c.telefono))
                             + fila('Dirección', esc(c.direccion)) + fila('Referencia', esc(c.referencia))
-                            + fila('Versión de la app', esc(c.app)) + mapa;
+                            + fila('Versión de la app', iconoSistema(c.sistema) + (c.app ? esc(c.app) : '—')) + mapa;
                     }
                     $('#d-cliente').html(cliente);
 
