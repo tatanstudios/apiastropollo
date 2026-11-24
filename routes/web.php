@@ -247,8 +247,6 @@ Route::get('/admin/notificaciones/vista/porcliente', [NotificacionesController::
 Route::get('/admin/notificaciones/vista/porcliente/tabla', [NotificacionesController::class,'tablaClientesDireccionesNotificacion']);
 Route::post('/admin/notificacion/cliente/informacion', [NotificacionesController::class,'informacionCliente']);
 Route::post('/admin/notificaciones/enviar/porcliente', [NotificacionesController::class,'enviarNotiPorCliente']);
-Route::post('/admin/notificaciones/enviar/prueba', [NotificacionesController::class,'enviarPruebaCliente']);
-
 
 
 
