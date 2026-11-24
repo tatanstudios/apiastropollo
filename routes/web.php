@@ -26,6 +26,7 @@ Route::post('admin/logout', [LoginController::class, 'logout'])->name('admin.log
 
 
 Route::get('/formulario/eliminacioncuenta', [LoginController::class,'vistaEliminacionCuenta']);
+Route::view('/terminos', 'cuenta.terminos');
 
 
 
