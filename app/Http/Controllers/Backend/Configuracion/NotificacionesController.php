@@ -105,6 +105,24 @@ class NotificacionesController extends Controller
     }
 
 
+    // prueba: envia directo al external_id "cliente_{id}" para revisar que llegue al telefono
+    public function enviarPruebaCliente(Request $request){
+
+        $validar = Validator::make($request->all(), ['idcliente' => 'required|integer|min:1']);
+        if ($validar->fails()){ return ['success' => 0, 'mensaje' => 'Escribe un ID de cliente válido']; }
+
+        $titulo = 'Prueba Astro Pollo';
+        $mensaje = 'Notificación de prueba enviada a las ' . now()->format('h:i:s A');
+
+        $resultado = OneSignalService::enviarClientes([(int) $request->idcliente], $titulo, $mensaje);
+
+        return [
+            'success' => $resultado === 'enviado' ? 1 : ($resultado === 'sin_dispositivo' ? 2 : 3),
+            'externalId' => OneSignalService::externalIdCliente((int) $request->idcliente),
+        ];
+    }
+
+
     public function enviarNotiPorCliente(Request $request){
 
 

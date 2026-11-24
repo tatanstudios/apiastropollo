@@ -20,6 +20,22 @@
 
 <section class="content">
     <div class="container-fluid">
+        <div class="card card-warning card-outline">
+            <div class="card-body py-3">
+                <div class="d-flex flex-wrap align-items-center">
+                    <strong class="mr-3"><i class="fas fa-vial mr-1"></i> Notificación de prueba</strong>
+                    <div class="input-group input-group-sm mr-2" style="width: 210px;">
+                        <div class="input-group-prepend"><span class="input-group-text">cliente_</span></div>
+                        <input type="number" min="1" class="form-control" id="id-prueba" value="12">
+                    </div>
+                    <button type="button" class="btn btn-warning btn-sm" onclick="enviarPrueba()">
+                        <i class="fas fa-paper-plane"></i> Enviar prueba
+                    </button>
+                    <small class="text-muted ml-3">Envía directo al External ID de OneSignal, a todos sus teléfonos.</small>
+                </div>
+            </div>
+        </div>
+
         <div class="card card-info">
             <div class="card-header">
                 <h3 class="card-title">Direcciones</h3>
@@ -232,6 +248,32 @@
                         toastr.error('Error al enviar');
                         closeLoading();
                     });
+        }
+
+
+        function enviarPrueba(){
+            var id = $('#id-prueba').val();
+            if (!id || Number(id) < 1) { toastr.error('Escribe el ID del cliente'); return; }
+
+            openLoading();
+            axios.post('/admin/notificaciones/enviar/prueba', { idcliente: id })
+                .then(function (response) {
+                    closeLoading();
+                    var r = response.data;
+                    if (r.success === 1) {
+                        toastr.success('Prueba enviada a ' + r.externalId);
+                    } else if (r.success === 2) {
+                        toastr.warning(r.externalId + ' no tiene teléfonos suscritos en OneSignal');
+                    } else if (r.success === 0) {
+                        toastr.error(r.mensaje);
+                    } else {
+                        toastr.error('OneSignal rechazó el envío (revisa storage/logs/laravel.log)');
+                    }
+                })
+                .catch(function () {
+                    closeLoading();
+                    toastr.error('Error del servidor');
+                });
         }
 
 
