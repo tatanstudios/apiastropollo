@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Carrito\ApiCarritoComprasController;
 use App\Http\Controllers\Api\Procesar\ApiProcesarController;
 use App\Http\Controllers\Api\Ordenes\ApiOrdenesController;
 use App\Http\Controllers\Api\Ordenes\ApiOrdenesRestauranteController;
+use App\Http\Controllers\Api\Ordenes\ApiWhatsAppRestauranteController;
 
 
 /*
@@ -129,6 +130,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('restaurante/listado/categorias', [ApiOrdenesRestauranteController::class, 'listadoDeCategorias']);
         Route::post('restaurante/historial/ordenes', [ApiOrdenesRestauranteController::class, 'historialOrdenesRestaurantes']);
         Route::post('restaurante/notificacion/modo/prueba', [ApiOrdenesRestauranteController::class, 'enviarNotificacionPropia']);
+        // seccion WhatsApp: numero de la sucursal y mensajes disponibles del bolson
+        Route::post('restaurante/whatsapp/informacion', [ApiWhatsAppRestauranteController::class, 'informacion']);
+        Route::post('restaurante/whatsapp/actualizar', [ApiWhatsAppRestauranteController::class, 'actualizar']);
     });
 
     // ---- ordenes, categorias y productos del restaurante (se valida que sean de su sucursal) ----
