@@ -13,7 +13,7 @@ use Throwable;
  * (WhatsApp Manager > Plantillas de mensajes), categoria "Utilidad". Plantilla esperada:
  *   nombre:  nueva_orden   (WHATSAPP_PLANTILLA_ORDEN)
  *   idioma:  es            (WHATSAPP_IDIOMA)
- *   cuerpo:  Nueva orden #{{1}}, revisar App
+ *   cuerpo:  El pedido número #{{1}} ha...  (aprobada 22/11/2026; un solo parametro: id de la orden)
  *
  * Configuracion en config/services.php (seccion whatsapp) a partir del .env.
  */

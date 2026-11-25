@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Ordenes;
 use App\Models\Servicios;
+use App\Services\WhatsAppBolson;
 use App\Services\WhatsAppService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * WhatsApp al numero del restaurante (servicios.whatsapp): "Nueva orden #X, revisar App".
  * Se envia UNA sola vez por orden, al guardarla (no en los recordatorios de cada minuto).
+ * Solo si el bolson de mensajes tiene saldo (WhatsAppBolson); cada envio exitoso gasta 1.
  *
  * Va separado del push (NotificarNuevaOrden) para que, en una cola real, si uno de los
  * dos falla y se reintenta, el otro no se repita.
@@ -45,9 +47,19 @@ class EnviarWhatsAppNuevaOrden implements ShouldQueue
             return;
         }
 
+        // bolson de mensajes: sin saldo no se envia
+        if (!WhatsAppBolson::reservar()) {
+            Log::info("WhatsApp orden #{$orden->id}: sin_saldo");
+            return;
+        }
+
         $resultado = WhatsAppService::enviarNuevaOrden($numero, $orden->id);
 
-        if ($resultado !== 'enviado') {
+        if ($resultado === 'enviado') {
+            WhatsAppBolson::confirmarEnvio($orden->id, $orden->id_servicio);
+        } else {
+            // no salio: el mensaje regresa al bolson
+            WhatsAppBolson::devolver();
             Log::info("WhatsApp orden #{$orden->id}: $resultado");
         }
 

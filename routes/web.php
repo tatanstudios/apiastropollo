@@ -17,6 +17,7 @@ use App\Http\Controllers\Backend\Ordenes\OrdenesController;
 use App\Http\Controllers\Backend\Configuracion\NotificacionesController;
 use App\Http\Controllers\Backend\Configuracion\ModificadoresController;
 use App\Http\Controllers\Backend\Reportes\ReportesController;
+use App\Http\Controllers\Backend\WhatsApp\WhatsAppController;
 
 
 Route::get('/', [LoginController::class,'index'])->name('login');
@@ -58,6 +59,14 @@ Route::post('/admin/permisos/editar-usuario', [PermisoController::class, 'editar
 Route::post('/admin/permisos/nuevo-rol', [PermisoController::class, 'nuevoRol']);
 Route::post('/admin/permisos/extra-nuevo', [PermisoController::class, 'nuevoPermisoExtra']);
 Route::post('/admin/permisos/extra-borrar', [PermisoController::class, 'borrarPermisoGlobal']);
+
+
+// --- WHATSAPP (bolson de mensajes; solo con permiso de Roles y Permisos) ---
+Route::get('/admin/whatsapp', [WhatsAppController::class,'index'])->name('admin.whatsapp.index');
+Route::get('/admin/whatsapp/resumen', [WhatsAppController::class,'resumen']);
+Route::get('/admin/whatsapp/numeros/tabla', [WhatsAppController::class,'tablaNumeros']);
+Route::get('/admin/whatsapp/historial/tabla', [WhatsAppController::class,'tablaHistorial']);
+Route::post('/admin/whatsapp/ajustar', [WhatsAppController::class,'ajustar']);
 
 
 // --- PERFIL ---

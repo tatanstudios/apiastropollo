@@ -308,6 +308,7 @@ return [
             'submenu' => [
                 ['text' => 'Rol y Permisos', 'route' => 'admin.roles.index', 'icon' => 'fas fa-fw fa-key'],
                 ['text' => 'Usuarios del panel', 'route' => 'admin.permisos.index', 'icon' => 'fas fa-fw fa-users-cog'],
+                ['text' => 'WhatsApp', 'route' => 'admin.whatsapp.index', 'icon' => 'fab fa-fw fa-whatsapp'],
             ],
         ],
 
