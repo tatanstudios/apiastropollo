@@ -18,7 +18,6 @@ use App\Http\Controllers\Backend\Configuracion\NotificacionesController;
 use App\Http\Controllers\Backend\Configuracion\ModificadoresController;
 use App\Http\Controllers\Backend\Reportes\ReportesController;
 use App\Http\Controllers\Backend\WhatsApp\WhatsAppController;
-use App\Http\Controllers\Backend\WhatsApp\BorrarVentasController;
 
 
 Route::get('/', [LoginController::class,'index'])->name('login');
@@ -68,8 +67,6 @@ Route::get('/admin/whatsapp/resumen', [WhatsAppController::class,'resumen']);
 Route::get('/admin/whatsapp/numeros/tabla', [WhatsAppController::class,'tablaNumeros']);
 Route::get('/admin/whatsapp/historial/tabla', [WhatsAppController::class,'tablaHistorial']);
 Route::post('/admin/whatsapp/ajustar', [WhatsAppController::class,'ajustar']);
-// TEMPORAL: borrar todas las ordenes de prueba antes de arrancar en produccion (quitar despues)
-Route::post('/admin/ventas/borrar', [BorrarVentasController::class,'borrar']);
 
 
 // --- PERFIL ---

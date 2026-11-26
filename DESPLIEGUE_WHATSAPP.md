@@ -42,7 +42,6 @@ Archivos de WhatsApp, para revisar que se subieron:
 | `app/Jobs/NotificarNuevaOrden.php` | Despacha el push y el WhatsApp |
 | `app/Http/Controllers/Api/Procesar/ApiProcesarController.php` | Llama a `NotificarNuevaOrden::despachar()` |
 | `app/Http/Controllers/Backend/WhatsApp/WhatsAppController.php` | Panel → WhatsApp (saldo e historial) |
-| `app/Http/Controllers/Backend/WhatsApp/BorrarVentasController.php` | **Temporal**: borrar órdenes de prueba |
 | `app/Http/Controllers/Api/Ordenes/ApiWhatsAppRestauranteController.php` | API para la app del restaurante |
 | `app/Http/Controllers/Backend/Configuracion/ServiciosController.php` | Campo WhatsApp del servicio |
 | `resources/views/backend/admin/whatsapp/*` | Vistas del panel WhatsApp |
@@ -137,5 +136,5 @@ Revisa que exista esta línea en `crontab -e`. Es para los recordatorios de cada
 
 ## Después
 
-- **Quitar la ruta temporal** `POST /admin/ventas/borrar` (`routes/web.php` línea 71-72) y su controlador, una vez que borres las órdenes de prueba. Permite borrar todas las ventas.
+- ✅ Botón "Borrar Ventas" quitado el 25/11/2026 (ruta, controlador y modal). En el servidor hay que **borrar** `app/Http/Controllers/Backend/WhatsApp/BorrarVentasController.php`.
 - Opcional: activar la **alerta de gasto** en Meta Business → Facturación.

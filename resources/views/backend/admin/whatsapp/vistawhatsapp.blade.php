@@ -33,12 +33,6 @@
                 <i class="fas fa-minus"></i>
                 Quitar mensajes
             </button>
-
-            {{-- TEMPORAL: solo mientras se arranca en produccion --}}
-            <button type="button" class="btn btn-outline-danger btn-sm ml-3" onclick="modalBorrarVentas()">
-                <i class="fas fa-trash-alt"></i>
-                Borrar Ventas
-            </button>
         </div>
     </section>
 
@@ -138,34 +132,6 @@
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
                     <button type="button" class="btn btn-primary" id="boton-ajuste" onclick="guardarAjuste()">Guardar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- TEMPORAL: borrar ventas de prueba --}}
-    <div class="modal fade" id="modalBorrarVentas">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-danger">
-                    <h4 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Borrar Ventas</h4>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p>Se borrarán <b>todas las órdenes</b> de todos los restaurantes, con sus productos, opciones y direcciones.
-                        La numeración de órdenes vuelve a empezar en <b>#1</b> y el uso de los cupones queda en 0.</p>
-                    <p class="text-danger mb-2"><b>No se puede deshacer.</b></p>
-                    <p class="mb-2">El saldo y el historial de WhatsApp no se tocan.</p>
-                    <div class="form-group mb-0">
-                        <label>Escribe <b>BORRAR</b> para confirmar</label>
-                        <input type="text" class="form-control" id="confirmar-borrar" autocomplete="off" placeholder="BORRAR">
-                    </div>
-                </div>
-                <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" onclick="borrarVentas()">Borrar todo</button>
                 </div>
             </div>
         </div>
@@ -282,41 +248,6 @@
                 .catch((error) => {
                     closeLoading();
                     toastr.error('Error al guardar');
-                });
-        }
-
-        // TEMPORAL: borrar ventas de prueba
-        function modalBorrarVentas(){
-            $('#confirmar-borrar').val('');
-            $('#modalBorrarVentas').modal('show');
-            setTimeout(function(){ $('#confirmar-borrar').focus(); }, 400);
-        }
-
-        function borrarVentas(){
-            var confirmar = $('#confirmar-borrar').val().trim();
-            if(confirmar !== 'BORRAR'){
-                toastr.error('Escribe BORRAR para confirmar');
-                return;
-            }
-
-            openLoading();
-            var formData = new FormData();
-            formData.append('confirmar', confirmar);
-
-            axios.post("{{ url('/admin/ventas/borrar') }}", formData)
-                .then((response) => {
-                    closeLoading();
-                    if(response.data.success === 1){
-                        toastr.success('Se borraron ' + response.data.borradas + ' órdenes');
-                        $('#modalBorrarVentas').modal('hide');
-                        recargarTodo();
-                    }else{
-                        toastr.error('No se borró nada');
-                    }
-                })
-                .catch((error) => {
-                    closeLoading();
-                    toastr.error('Error al borrar');
                 });
         }
     </script>
